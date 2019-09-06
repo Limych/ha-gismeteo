@@ -21,7 +21,7 @@ from homeassistant.const import (
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
 
-from . import gismeteo
+from . import Gismeteo
 from .const import (
     ATTRIBUTION, DEFAULT_NAME, MIN_TIME_BETWEEN_UPDATES, CONF_CACHE_DIR,
     DEFAULT_CACHE_DIR, ATTR_WEATHER_CLOUDINESS,
@@ -77,7 +77,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     forecast = config.get(CONF_FORECAST)
     cache_dir = config.get(CONF_CACHE_DIR)
 
-    gm = gismeteo.Gismeteo(latitude, longitude, params={
+    gm = Gismeteo(latitude, longitude, params={
         'timezone': str(hass.config.time_zone),
         'cache_dir': str(cache_dir) + '/gismeteo'
         if os.access(cache_dir, os.X_OK | os.W_OK) else None,

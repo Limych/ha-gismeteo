@@ -20,7 +20,7 @@ from homeassistant.const import (
     CONF_MODE)
 from homeassistant.helpers import config_validation as cv
 
-from . import gismeteo
+from . import Gismeteo
 from .const import (
     ATTRIBUTION, DEFAULT_NAME, MIN_TIME_BETWEEN_UPDATES, CONF_CACHE_DIR,
     DEFAULT_CACHE_DIR, VERSION, FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY)
@@ -50,7 +50,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     cache_dir = config.get(CONF_CACHE_DIR)
     mode = config.get(CONF_MODE)
 
-    gm = gismeteo.Gismeteo(latitude, longitude, mode, params={
+    gm = Gismeteo(latitude, longitude, mode, params={
         'timezone': str(hass.config.time_zone),
         'cache_dir': str(cache_dir) + '/gismeteo'
         if os.access(cache_dir, os.X_OK | os.W_OK) else None,
