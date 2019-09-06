@@ -175,5 +175,5 @@ custom_updater:
     - https://raw.githubusercontent.com/Limych/ha-gismeteo/master/tracker.json
 ```
 
-[forum-support]: https://community.home-assistant.io/t/average-sensor/111674
+[forum-support]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
 [hacs]: https://github.com/custom-components/hacs
