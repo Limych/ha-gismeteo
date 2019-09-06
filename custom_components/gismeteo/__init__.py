@@ -112,7 +112,11 @@ class Cache:
     def save_cache(self, file_name, content):
         if self._cache_dir:
             if not os.path.exists(self._cache_dir):
-                os.makedirs(self._cache_dir)
+                try:
+                    os.makedirs(self._cache_dir)
+                except FileExistsError:
+                    # Defeats race condition when another thread created path
+                    pass
 
             file_path = self._get_file_path(file_name)
 
