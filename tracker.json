@@ -1,0 +1,15 @@
+{
+    "gismeteo": {
+        "version": "2.0.13",
+        "local_location": "/custom_components/gismeteo/__init__.py",
+        "remote_location": "https://raw.githubusercontent.com/Limych/ha-gismeteo/master/custom_components/gismeteo/__init__.py",
+        "visit_repo": "https://github.com/Limych/ha-gismeteo",
+        "changelog": "https://github.com/Limych/ha-gismeteo/releases/latest",
+        "resources": [
+            "https://raw.githubusercontent.com/Limych/ha-gismeteo/master/custom_components/gismeteo/const.py",
+            "https://raw.githubusercontent.com/Limych/ha-gismeteo/master/custom_components/gismeteo/manifest.json",
+            "https://raw.githubusercontent.com/Limych/ha-gismeteo/master/custom_components/gismeteo/sensor.py",
+            "https://raw.githubusercontent.com/Limych/ha-gismeteo/master/custom_components/gismeteo/weather.py"
+        ]
+    }
+}

@@ -1,0 +1,179 @@
+*Please :star: this repo if you find it useful*
+
+# Gismeteo Weather Provider for Home Assistant
+
+[![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-gismeteo?label=release&style=popout)](https://github.com/Limych/ha-gismeteo/releases)
+[![GitHub Activity](https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout)](https://github.com/Limych/ha-gismeteo/commits/master)
+[![License](https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout)](LICENSE.md)
+![Requires.io](https://img.shields.io/requires/github/Limych/ha-gismeteo)
+
+[![hacs](https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout)][hacs]
+![Project Maintenance](https://img.shields.io/badge/maintainer-Andrey%20Khrolenok%20%40Limych-blue.svg?style=popout)
+
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/Limych/ha-gismeteo?style=popout)](https://github.com/Limych/ha-gismeteo/pulls)
+[![Bugs](https://img.shields.io/github/issues/Limych/ha-gismeteo/bug.svg?colorB=red&label=bugs&style=popout)](https://github.com/Limych/ha-gismeteo/issues?q=is%3Aopen+is%3Aissue+label%3ABug)
+
+[![Community Forum](https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout)][forum-support]
+
+This component can be used in two different ways: as a weather provider for any given coordinates and as a set of sensors for current coordinates of a house.
+
+![Gismeteo Logo](gismeteo_logo.jpg)
+
+*NB. You can find a real example of using this component in [my Home Assistant configuration](https://github.com/Limych/HomeAssistantConfiguration).*
+
+I also suggest you [visit the support topic][forum-support] on the community forum.
+
+## Installation
+
+1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
+1. If you do not have a `custom_components` directory (folder) there, you need to create it.
+1. In the `custom_components` directory (folder) create a new folder called `average`.
+1. Download _all_\
+  the files from the `custom_components/average/` directory (folder) in this repository.
+1. Place the files you downloaded in the new directory (folder) you created.
+1. Restart Home Assistant
+
+### Weather Provider Configuration
+
+The `gismeteo` weather platform uses [Gismeteo](https://www.gismeteo.ru/) as a source for current meteorological data for a specified location.
+
+![Example](gismeteo_weather.jpg)
+
+To add Gismeteo weather provider to your installation, add the following to your `configuration.yaml` file:
+
+```yaml
+# Example configuration.yaml entry
+weather:
+  - platform: gismeteo
+```
+
+You can add as many providers with different configurations as you wish.
+
+<p align="center">* * *</p>
+I put a lot of work into making this repo and component available and updated to inspire and help others! I will be glad to receive thanks from you — it will give me new strength and add enthusiasm:
+<p align="center"><br>
+<a href="https://www.patreon.com/join/limych?" target="_blank"><img src="http://khrolenok.ru/support_patreon.png" alt="Patreon" width="250" height="48"></a>
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=UAGFL5L6M8RN2&item_name=[average]+Donation+for+a+big+barrel+of+coffee+:)&currency_code=EUR&source=url" target="_blank"><img src="http://khrolenok.ru/support_paypal.png" alt="PayPal" width="250" height="48"></a>
+</p>
+
+#### Configuration Variables
+
+**name:**\
+  _(string) (Optional)_\
+  Name to use in the frontend.\
+  _Default value: Gismeteo_
+  
+**mode:**\
+  _(string) (Optional)_\
+  Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast, `daily` for daily forecast.\
+  _Default value: `hourly`_
+  
+**latitude:**\
+  _(float) (Optional)_\
+  Latitude of the location to display the weather.\
+  _Default value: The latitude in your `configuration.yaml` file._
+
+**longitude:**\
+  _(float) (Optional)_\
+  Longitude of the location to display the weather.\
+  _Default value: The longitude in your `configuration.yaml` file._
+
+### Weather Sensors Configuration
+
+The `gismeteo` sensors uses [Gismeteo](https://www.gismeteo.ru/) as a source for current meteorological data for your home location. The forecast will show you the condition in 3 h.
+
+![Example](gismeteo_sensor.jpg)
+
+To add Gismeteo sensors to your installation, add the following to your `configuration.yaml` file:
+
+```yaml
+# Example configuration.yaml entry
+sensor:
+  - platform: gismeteo
+    monitored_conditions:
+      - weather
+```
+
+You can add only one group of sensors.
+
+<p align="center">* * *</p>
+I put a lot of work into making this repo and component available and updated to inspire and help others! I will be glad to receive thanks from you — it will give me new strength and add enthusiasm:
+<p align="center"><br>
+<a href="https://www.patreon.com/join/limych?" target="_blank"><img src="http://khrolenok.ru/support_patreon.png" alt="Patreon" width="250" height="48"></a>
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=UAGFL5L6M8RN2&item_name=[average]+Donation+for+a+big+barrel+of+coffee+:)&currency_code=EUR&source=url" target="_blank"><img src="http://khrolenok.ru/support_paypal.png" alt="PayPal" width="250" height="48"></a>
+</p>
+
+#### Configuration Variables
+
+**name:**\
+  _(string) (Optional)_\
+  Additional name for the sensors. Default to platform name.\
+  _Default value: Gismeteo_
+  
+**forecast:**\
+  _(boolean) (Optional)_\
+  Enables the forecast. The default is to display the current conditions.\
+  _Default value: false_
+  
+**monitored_conditions:**\
+  _(list) (Required)_\
+  Conditions to display in the frontend.
+  
+> **weather:**\
+>   A human-readable text summary.
+> 
+> **temperature**\
+>   The current temperature.
+> 
+> **wind_speed**\
+>   The wind speed.
+> 
+> **wind_bearing**\
+>   The wind bearing.
+> 
+> **humidity**\
+>   The relative humidity.
+> 
+> **pressure**\
+>   The sea-level air pressure in millibars.
+> 
+> **clouds**\
+>   Description about cloud coverage.
+> 
+> **rain**\
+>   The rain volume.
+> 
+> **snow**\
+>   The snow volume.
+> 
+> **storm**\
+>   The storm prediction.
+> 
+> **geomagnetic**\
+>   The geomagnetic field value:\
+>   1 = No noticeable geomagnetic disturbance\
+>   2 = Small geomagnetic disturbances\
+>   3 = Weak geomagnetic storm\
+>   4 = Small geomagnetic storm\
+>   5 = Moderate geomagnetic storm\
+>   6 = Severe geomagnetic storm\
+>   7 = Hard geomagnetic storm\
+>   8 = Extreme geomagnetic storm
+
+## Track updates
+
+You can automatically track new versions of this component and update it by [custom-updater](https://github.com/custom-components/custom_updater) (deprecated) or [HACS][hacs].
+
+For custom-updater to initiate tracking add this lines to you `configuration.yaml` file:
+
+```yaml
+# Example configuration.yaml entry
+custom_updater:
+  track:
+    - components
+  component_urls:
+    - https://raw.githubusercontent.com/Limych/ha-gismeteo/master/tracker.json
+```
+
+[forum-support]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
+[hacs]: https://github.com/custom-components/hacs
