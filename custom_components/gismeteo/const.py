@@ -7,16 +7,23 @@
 The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
-https://github.com/Limych/HomeAssistantComponents/
+https://github.com/Limych/ha-gismeteo/
 """
 
 from datetime import timedelta
 
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 
-VERSION = '2.0.13'
-
+# Base component constants
+DOMAIN = 'gismeteo'
+VERSION = '2.0.14'
+ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 ATTRIBUTION = 'Data provided by Gismeteo'
+
+BASE_URL = 'https://services.gismeteo.ru/inform-service/inf_chrome'
+
+MMHG2HPA = 1.333223684
+MS2KMH = 3.6
 
 CONF_CACHE_DIR = 'cache_dir'
 
@@ -24,7 +31,6 @@ FORECAST_MODE_HOURLY = 'hourly'
 FORECAST_MODE_DAILY = 'daily'
 
 DEFAULT_NAME = 'Gismeteo'
-DEFAULT_CACHE_DIR = '/tmp'
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=5)
 

@@ -7,15 +7,13 @@
 The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
-https://github.com/Limych/HomeAssistantComponents/
+https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
-import os
 import time
 import xml.etree.cElementTree as etree
 from datetime import (datetime)
-from io import open
 from urllib.request import (urlopen)
 
 from homeassistant.components.weather import (
@@ -28,6 +26,7 @@ from homeassistant.const import (
 from homeassistant.util import (
     Throttle, dt as dt_util)
 
+from .cache import Cache
 from .const import (
     ATTR_FORECAST_HUMIDITY, ATTR_FORECAST_PRESSURE,
     MIN_TIME_BETWEEN_UPDATES, CONDITION_FOG_CLASSES, ATTR_SUNRISE,
@@ -39,7 +38,7 @@ from .const import (
     ATTR_FORECAST_CLOUDINESS, ATTR_FORECAST_PRECIPITATION_AMOUNT,
     ATTR_FORECAST_PRECIPITATION_INTENSITY, ATTR_FORECAST_STORM,
     ATTR_FORECAST_GEOMAGNETIC_FIELD, FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY,
-    VERSION)
+    BASE_URL, MMHG2HPA, MS2KMH, VERSION, ISSUE_URL, DOMAIN)
 
 try:
     etree.fromstring('<?xml version="1.0"?><foo><bar/></foo>')
@@ -48,81 +47,16 @@ except TypeError:
 
 _LOGGER = logging.getLogger(__name__)
 
-BASE_URL = 'https://services.gismeteo.ru/inform-service/inf_chrome'
 
-MMHG2HPA = 1.333223684
-MS2KMH = 3.6
+# pylint: disable=unused-argument
+def setup(hass, config):
+    """Set up component."""
+    # Print startup message
+    _LOGGER.info('Version %s', VERSION)
+    _LOGGER.info('If you have ANY issues with this,'
+                 ' please report them here: %s', ISSUE_URL)
 
-
-class Cache:
-    def __init__(self, params=None):
-        params = params or {}
-
-        self._cache_dir = params.get('cache_dir', '')
-        self._cache_time = params.get('cache_time', 0)
-
-        if self._cache_dir != '':
-            self._cache_dir = os.path.abspath(self._cache_dir)
-
-        self._clear_dir()
-
-    def _clear_dir(self):
-        now_time = time.time()
-
-        if self._cache_dir != '' \
-                and os.path.exists(self._cache_dir):
-            files = os.listdir(self._cache_dir)
-            for file_name in files:
-                file_path = self._get_file_path(file_name)
-                try:
-                    file_time = os.path.getmtime(file_path)
-                    if (file_time + self._cache_time) <= now_time:
-                        os.remove(file_path)
-                except FileNotFoundError:
-                    pass
-
-    def _get_file_path(self, file_name):
-        return os.path.join(self._cache_dir, file_name)
-
-    def is_cached(self, file_name):
-        result = False
-
-        file_path = self._get_file_path(file_name)
-        if os.path.exists(file_path) \
-                and os.path.isfile(file_path):
-            file_time = os.path.getmtime(file_path)
-            now_time = time.time()
-
-            result = (file_time + self._cache_time) >= now_time
-
-        return result
-
-    def read_cache(self, file_name):
-        file_path = self._get_file_path(file_name)
-        if os.path.exists(file_path) \
-                and os.path.isfile(file_path):
-            file = open(file_path)
-            content = file.read()
-            file.close()
-        else:
-            content = None
-
-        return content
-
-    def save_cache(self, file_name, content):
-        if self._cache_dir:
-            if not os.path.exists(self._cache_dir):
-                try:
-                    os.makedirs(self._cache_dir)
-                except FileExistsError:
-                    # Defeats race condition when another thread created path
-                    pass
-
-            file_path = self._get_file_path(file_name)
-
-            file = open(file_path, "w")
-            file.write(content.decode('utf-8'))
-            file.close()
+    return True
 
 
 class Gismeteo:
@@ -132,6 +66,7 @@ class Gismeteo:
                  mode=FORECAST_MODE_HOURLY, params=None):
         """Initialize the data object."""
         params = params or {}
+        params['domain'] = DOMAIN
 
         _LOGGER.debug('Place coordinates: %s, %s', latitude, longitude)
         _LOGGER.debug('Forecast mode: %s', mode)
@@ -195,6 +130,8 @@ class Gismeteo:
         src = src or self._current
 
         cl = src.get(ATTR_WEATHER_CLOUDINESS)
+        if cl is None:
+            return None
         if cl == 0:
             if self._mode == FORECAST_MODE_DAILY or self._is_day(
                     src.get(ATTR_FORECAST_TIME, time.time()),
@@ -239,42 +176,51 @@ class Gismeteo:
     def temperature(self, src=None):
         """Return the current temperature."""
         src = src or self._current
-        return src.get(ATTR_WEATHER_TEMPERATURE)
-
-    def pressure_hpa(self, src=None):
-        """Return the current pressure in hPa."""
-        return round(self.pressure_mmhg(src) * MMHG2HPA, 1)
+        temperature = src.get(ATTR_WEATHER_TEMPERATURE)
+        return float(temperature) if temperature is not None else STATE_UNKNOWN
 
     def pressure_mmhg(self, src=None):
         """Return the current pressure in mmHg."""
         src = src or self._current
-        return float(src.get(ATTR_WEATHER_PRESSURE))
+        pressure = src.get(ATTR_WEATHER_PRESSURE)
+        return float(pressure) if pressure is not None else STATE_UNKNOWN
+
+    def pressure_hpa(self, src=None):
+        """Return the current pressure in hPa."""
+        src = src or self._current
+        pressure = src.get(ATTR_WEATHER_PRESSURE)
+        return round(pressure * MMHG2HPA, 1) if pressure is not None \
+            else STATE_UNKNOWN
 
     def humidity(self, src=None):
         """Return the name of the sensor."""
         src = src or self._current
-        return int(src.get(ATTR_WEATHER_HUMIDITY))
+        humidity = src.get(ATTR_WEATHER_HUMIDITY)
+        return int(humidity) if humidity is not None else STATE_UNKNOWN
 
     def wind_bearing(self, src=None):
         """Return the current wind bearing."""
         src = src or self._current
-        wd = int(src.get(ATTR_WEATHER_WIND_BEARING))
+        wd = int(src.get(ATTR_WEATHER_WIND_BEARING, 0))
         return (wd - 1) * 45 if wd > 0 else STATE_UNKNOWN
 
     def wind_speed_kmh(self, src=None):
         """Return the current windspeed in km/h."""
-        return round(self.wind_speed_ms(src) * MS2KMH, 1)
+        src = src or self._current
+        speed = src.get(ATTR_WEATHER_WIND_SPEED)
+        return round(speed * MS2KMH, 1) if speed is not None else STATE_UNKNOWN
 
     def wind_speed_ms(self, src=None):
         """Return the current windspeed in m/s."""
         src = src or self._current
-        res = src.get(ATTR_WEATHER_WIND_SPEED)
-        return float(res)
+        speed = src.get(ATTR_WEATHER_WIND_SPEED)
+        return float(speed) if speed is not None else STATE_UNKNOWN
 
     def precipitation_amount(self, src=None):
         """Return the current precipitation amount in mm."""
         src = src or self._current
-        return src.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
+        precipitation = src.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
+        return precipitation if precipitation is not None else STATE_UNKNOWN
 
     def forecast(self, src=None):
         """Return the forecast array."""
@@ -283,52 +229,36 @@ class Gismeteo:
         now = int(time.time())
         dt_util.set_default_time_zone(self._timezone)
         for e in src:
-            if self._mode == FORECAST_MODE_HOURLY:
-                data = {
-                    ATTR_FORECAST_TIME:
-                        dt_util.as_local(datetime.utcfromtimestamp(
-                            e.get(ATTR_FORECAST_TIME))).isoformat(),
-                    ATTR_FORECAST_CONDITION:
-                        self.condition(e),
-                    ATTR_FORECAST_TEMP:
-                        self.temperature(e),
-                    ATTR_FORECAST_PRESSURE:
-                        self.pressure_hpa(e),
-                    ATTR_FORECAST_HUMIDITY:
-                        self.humidity(e),
-                    ATTR_FORECAST_WIND_SPEED:
-                        self.wind_speed_kmh(e),
-                    ATTR_FORECAST_WIND_BEARING:
-                        self.wind_bearing(e),
-                    ATTR_FORECAST_PRECIPITATION:
-                        self.precipitation_amount(e),
-                }
+            fc_time = e.get(ATTR_FORECAST_TIME)
+            if fc_time is None:
+                continue
 
-            else:  # self._mode == FORECAST_MODE_DAILY
-                data = {
-                    ATTR_FORECAST_TIME:
-                        dt_util.as_local(datetime.utcfromtimestamp(
-                            e.get(ATTR_FORECAST_TIME))).isoformat(),
-                    ATTR_FORECAST_CONDITION:
-                        self.condition(e),
-                    ATTR_FORECAST_TEMP:
-                        self.temperature(e),
-                    ATTR_FORECAST_PRESSURE:
-                        self.pressure_hpa(e),
-                    ATTR_FORECAST_HUMIDITY:
-                        self.humidity(e),
-                    ATTR_FORECAST_WIND_SPEED:
-                        self.wind_speed_kmh(e),
-                    ATTR_FORECAST_WIND_BEARING:
-                        self.wind_bearing(e),
-                    ATTR_FORECAST_PRECIPITATION:
-                        self.precipitation_amount(e),
-                }
-                if e.get(ATTR_FORECAST_TEMP_LOW) is not None:
-                    data[ATTR_FORECAST_TEMP_LOW] = e.get(
-                        ATTR_FORECAST_TEMP_LOW)
+            data = {
+                ATTR_FORECAST_TIME:
+                    dt_util.as_local(
+                        datetime.utcfromtimestamp(fc_time)).isoformat(),
+                ATTR_FORECAST_CONDITION:
+                    self.condition(e),
+                ATTR_FORECAST_TEMP:
+                    self.temperature(e),
+                ATTR_FORECAST_PRESSURE:
+                    self.pressure_hpa(e),
+                ATTR_FORECAST_HUMIDITY:
+                    self.humidity(e),
+                ATTR_FORECAST_WIND_SPEED:
+                    self.wind_speed_kmh(e),
+                ATTR_FORECAST_WIND_BEARING:
+                    self.wind_bearing(e),
+                ATTR_FORECAST_PRECIPITATION:
+                    self.precipitation_amount(e),
+            }
 
-            if e.get(ATTR_FORECAST_TIME) < now:
+            if self._mode == FORECAST_MODE_DAILY \
+                    and e.get(ATTR_FORECAST_TEMP_LOW) is not None:
+                data[ATTR_FORECAST_TEMP_LOW] = e.get(
+                    ATTR_FORECAST_TEMP_LOW)
+
+            if fc_time < now:
                 forecast = [data]
             else:
                 forecast.append(data)

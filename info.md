@@ -19,6 +19,8 @@
 - [Documentation](https://github.com/Limych/ha-gismeteo)
 - [Weather Provider Configuration](https://github.com/Limych/ha-gismeteo#weather-provider-configuration)
 - [Weather Sensors Configuration](https://github.com/Limych/ha-gismeteo#weather-sensors-configuration)
+- [Report a Bug](https://github.com/Limych/ha-gismeteo/issues/new?template=issue.md)
+- [Suggest an idea](https://github.com/Limych/ha-gismeteo/issues/new?template=feature_request.md)
 
 <p align="center">* * *</p>
 I put a lot of work into making this repo and component available and updated to inspire and help others! I will be glad to receive thanks from you — it will give me new strength and add enthusiasm:

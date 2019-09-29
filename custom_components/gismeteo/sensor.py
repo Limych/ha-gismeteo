@@ -4,13 +4,12 @@
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 #
 """
-The Gismeteo component.
+The Gismeteo Sensor.
 
 For more details about this platform, please refer to the documentation at
-https://github.com/Limych/HomeAssistantComponents/
+https://github.com/Limych/ha-gismeteo/
 """
 import logging
-import os
 
 import voluptuous as vol
 from homeassistant.components.weather import (
@@ -20,14 +19,14 @@ from homeassistant.const import (
     CONF_API_KEY)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.storage import STORAGE_DIR
 
 from . import Gismeteo
 from .const import (
     ATTRIBUTION, DEFAULT_NAME, MIN_TIME_BETWEEN_UPDATES, CONF_CACHE_DIR,
-    DEFAULT_CACHE_DIR, ATTR_WEATHER_CLOUDINESS,
-    ATTR_WEATHER_PRECIPITATION_TYPE, ATTR_WEATHER_PRECIPITATION_AMOUNT,
-    ATTR_WEATHER_PRECIPITATION_INTENSITY, ATTR_WEATHER_STORM,
-    ATTR_WEATHER_GEOMAGNETIC_FIELD, VERSION)
+    ATTR_WEATHER_CLOUDINESS, ATTR_WEATHER_PRECIPITATION_TYPE,
+    ATTR_WEATHER_PRECIPITATION_AMOUNT, ATTR_WEATHER_PRECIPITATION_INTENSITY,
+    ATTR_WEATHER_STORM, ATTR_WEATHER_GEOMAGNETIC_FIELD, VERSION)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,17 +55,14 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_MONITORED_CONDITIONS, default=[]):
         vol.All(cv.ensure_list, [vol.In(SENSOR_TYPES)]),
     vol.Optional(CONF_FORECAST, default=False): cv.boolean,
-    vol.Optional(CONF_CACHE_DIR, default=DEFAULT_CACHE_DIR): cv.string,
+    vol.Optional(CONF_CACHE_DIR): cv.string,
     vol.Optional(CONF_LANGUAGE): cv.string,
 })
 
 
+# pylint: disable=unused-argument
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Gismeteo weather platform."""
-    _LOGGER.debug('Version %s', VERSION)
-    _LOGGER.info('if you have ANY issues with this, please report them here:'
-                 ' https://github.com/Limych/HomeAssistantComponents')
-
     if None in (hass.config.latitude, hass.config.longitude):
         _LOGGER.error("Latitude or longitude not set in Home Assistant config")
         return
@@ -75,12 +71,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     name = config.get(CONF_NAME)
     forecast = config.get(CONF_FORECAST)
-    cache_dir = config.get(CONF_CACHE_DIR)
+    cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
 
     gm = Gismeteo(latitude, longitude, params={
         'timezone': str(hass.config.time_zone),
-        'cache_dir': str(cache_dir) + '/gismeteo'
-        if os.access(cache_dir, os.X_OK | os.W_OK) else None,
+        'cache_dir': cache_dir,
         'cache_time': MIN_TIME_BETWEEN_UPDATES.total_seconds(),
     })
 
