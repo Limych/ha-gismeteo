@@ -65,12 +65,12 @@ I put a lot of work into making this repo and component available and updated to
   _(string) (Optional)_\
   Name to use in the frontend.\
   _Default value: Gismeteo_
-  
+
 **mode:**\
   _(string) (Optional)_\
   Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast, `daily` for daily forecast.\
   _Default value: `hourly`_
-  
+
 **latitude:**\
   _(float) (Optional)_\
   Latitude of the location to display the weather.\
@@ -115,46 +115,46 @@ I put a lot of work into making this repo and component available and updated to
   _(string) (Optional)_\
   Additional name for the sensors. Default to platform name.\
   _Default value: Gismeteo_
-  
+
 **forecast:**\
   _(boolean) (Optional)_\
   Enables the forecast. The default is to display the current conditions.\
   _Default value: false_
-  
+
 **monitored_conditions:**\
   _(list) (Required)_\
   Conditions to display in the frontend.
-  
+
 > **weather**\
 >   A human-readable text summary.
-> 
+>
 > **temperature**\
 >   The current temperature.
-> 
+>
 > **wind_speed**\
 >   The wind speed.
-> 
+>
 > **wind_bearing**\
 >   The wind bearing.
-> 
+>
 > **humidity**\
 >   The relative humidity.
-> 
+>
 > **pressure**\
 >   The sea-level air pressure in millibars.
-> 
+>
 > **clouds**\
 >   Description about cloud coverage.
-> 
+>
 > **rain**\
 >   The rain volume.
-> 
+>
 > **snow**\
 >   The snow volume.
-> 
+>
 > **storm**\
 >   The storm prediction.
-> 
+>
 > **geomagnetic**\
 >   The geomagnetic field value:\
 >   1 = No noticeable geomagnetic disturbance\
@@ -168,18 +168,7 @@ I put a lot of work into making this repo and component available and updated to
 
 ## Track updates
 
-You can automatically track new versions of this component and update it by [custom-updater](https://github.com/custom-components/custom_updater) (deprecated) or [HACS][hacs].
-
-For custom-updater to initiate tracking add this lines to you `configuration.yaml` file:
-
-```yaml
-# Example configuration.yaml entry
-custom_updater:
-  track:
-    - components
-  component_urls:
-    - https://raw.githubusercontent.com/Limych/ha-gismeteo/master/tracker.json
-```
+You can automatically track new versions of this component and update it by [HACS][hacs].
 
 [forum-support]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
 [hacs]: https://github.com/custom-components/hacs
