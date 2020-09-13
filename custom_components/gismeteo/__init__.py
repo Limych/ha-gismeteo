@@ -73,7 +73,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Base component constants
 DOMAIN = "gismeteo"
-VERSION = "2.0.14"
+VERSION = '2.0.15'
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 ATTRIBUTION = "Data provided by Gismeteo"
 
