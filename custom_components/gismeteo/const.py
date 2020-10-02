@@ -89,10 +89,10 @@ LENGTH_MILLIMETERS: str = "mm"
 
 SENSOR_TYPES = {
     "weather": ["Condition", None, None],
-    "temperature": ["Temperature", TEMP_CELSIUS, "mdi:temperature"],
+    "temperature": ["Temperature", TEMP_CELSIUS, "mdi:thermometer"],
     "wind_speed": ["Wind speed", SPEED_METERS_PER_SECOND, "mdi:weather-windy"],
     "wind_bearing": ["Wind bearing", DEGREE, "mdi:weather-windy"],
-    "humidity": ["Humidity", PERCENTAGE, "mdi:humidity"],
+    "humidity": ["Humidity", PERCENTAGE, "mdi:water-percent"],
     "pressure": ["Pressure", PRESSURE_HPA, "mdi:gauge"],
     "clouds": ["Cloud coverage", PERCENTAGE, "mdi:weather-partlycloudy"],
     "rain": ["Rain", LENGTH_MILLIMETERS, "mdi:weather-rainy"],
