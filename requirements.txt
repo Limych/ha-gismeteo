@@ -1,4 +1,4 @@
-geopy
-geohash2
-voluptuous
-homeassistant
+geopy~=2.0
+geohash2~=1.1
+voluptuous~=0.12
+homeassistant~=0.115
