@@ -330,81 +330,96 @@ class Gismeteo:
 
         response = self._http_request(url, cache_fname)
         if not response:
-            _LOGGER.warning("Can't update weather data!")
+            _LOGGER.warning("Can't update weather data! Invalid server response.")
             return
 
-        xml = etree.fromstring(response)
-        tzone = int(xml.find("location").get("tzone"))
-        current = xml.find("location/fact")
-        current_v = current.find("values")
+        try:
+            xml = etree.fromstring(response)
+            tzone = int(xml.find("location").get("tzone"))
+            current = xml.find("location/fact")
+            current_v = current.find("values")
 
-        self._current = {
-            ATTR_SUNRISE: self._get(current, "sunrise", int),
-            ATTR_SUNSET: self._get(current, "sunset", int),
-            ATTR_WEATHER_CONDITION: self._get(current_v, "descr"),
-            ATTR_WEATHER_TEMPERATURE: self._get(current_v, "tflt", float),
-            ATTR_WEATHER_PRESSURE: self._get(current_v, "p", int),
-            ATTR_WEATHER_HUMIDITY: self._get(current_v, "hum", int),
-            ATTR_WEATHER_WIND_SPEED: self._get(current_v, "ws", int),
-            ATTR_WEATHER_WIND_BEARING: self._get(current_v, "wd", int),
-            ATTR_WEATHER_CLOUDINESS: self._get(current_v, "cl", int),
-            ATTR_WEATHER_PRECIPITATION_TYPE: self._get(current_v, "pt", int),
-            ATTR_WEATHER_PRECIPITATION_AMOUNT: self._get(current_v, "prflt", float),
-            ATTR_WEATHER_PRECIPITATION_INTENSITY: self._get(current_v, "pr", int),
-            ATTR_WEATHER_STORM: (self._get(current_v, "ts") == 1),
-            ATTR_WEATHER_GEOMAGNETIC_FIELD: self._get(current_v, "grade", int),
-            ATTR_WEATHER_PHENOMENON: self._get(current_v, "ph", int),
-        }
+            self._current = {
+                ATTR_SUNRISE: self._get(current, "sunrise", int),
+                ATTR_SUNSET: self._get(current, "sunset", int),
+                ATTR_WEATHER_CONDITION: self._get(current_v, "descr"),
+                ATTR_WEATHER_TEMPERATURE: self._get(current_v, "tflt", float),
+                ATTR_WEATHER_PRESSURE: self._get(current_v, "p", int),
+                ATTR_WEATHER_HUMIDITY: self._get(current_v, "hum", int),
+                ATTR_WEATHER_WIND_SPEED: self._get(current_v, "ws", int),
+                ATTR_WEATHER_WIND_BEARING: self._get(current_v, "wd", int),
+                ATTR_WEATHER_CLOUDINESS: self._get(current_v, "cl", int),
+                ATTR_WEATHER_PRECIPITATION_TYPE: self._get(current_v, "pt", int),
+                ATTR_WEATHER_PRECIPITATION_AMOUNT: self._get(current_v, "prflt", float),
+                ATTR_WEATHER_PRECIPITATION_INTENSITY: self._get(current_v, "pr", int),
+                ATTR_WEATHER_STORM: (self._get(current_v, "ts") == 1),
+                ATTR_WEATHER_GEOMAGNETIC_FIELD: self._get(current_v, "grade", int),
+                ATTR_WEATHER_PHENOMENON: self._get(current_v, "ph", int),
+            }
 
-        self._forecast = []
-        if self._mode == FORECAST_MODE_HOURLY:
-            for day in xml.findall("location/day"):
-                sunrise = self._get(day, "sunrise", int)
-                sunset = self._get(day, "sunset", int)
+            self._forecast = []
+            if self._mode == FORECAST_MODE_HOURLY:
+                for day in xml.findall("location/day"):
+                    sunrise = self._get(day, "sunrise", int)
+                    sunset = self._get(day, "sunset", int)
 
-                for i in day.findall("forecast"):
-                    fc_v = i.find("values")
+                    for i in day.findall("forecast"):
+                        fc_v = i.find("values")
+                        data = {
+                            ATTR_SUNRISE: sunrise,
+                            ATTR_SUNSET: sunset,
+                            ATTR_FORECAST_TIME: self._get_utime(i.get("valid"), tzone),
+                            ATTR_FORECAST_CONDITION: self._get(fc_v, "descr"),
+                            ATTR_FORECAST_TEMP: self._get(fc_v, "t", int),
+                            ATTR_FORECAST_PRESSURE: self._get(fc_v, "p", int),
+                            ATTR_FORECAST_HUMIDITY: self._get(fc_v, "hum", int),
+                            ATTR_FORECAST_WIND_SPEED: self._get(fc_v, "ws", int),
+                            ATTR_FORECAST_WIND_BEARING: self._get(fc_v, "wd", int),
+                            ATTR_FORECAST_CLOUDINESS: self._get(fc_v, "cl", int),
+                            ATTR_FORECAST_PRECIPITATION_TYPE: self._get(
+                                fc_v, "pt", int
+                            ),
+                            ATTR_FORECAST_PRECIPITATION_AMOUNT: self._get(
+                                fc_v, "prflt", float
+                            ),
+                            ATTR_FORECAST_PRECIPITATION_INTENSITY: self._get(
+                                fc_v, "pr", int
+                            ),
+                            ATTR_FORECAST_STORM: (fc_v.get("ts") == 1),
+                            ATTR_FORECAST_GEOMAGNETIC_FIELD: self._get(
+                                fc_v, "grade", int
+                            ),
+                        }
+                        self._forecast.append(data)
+
+            else:  # self._mode == FORECAST_MODE_DAILY
+                for day in xml.findall("location/day[@descr]"):
                     data = {
-                        ATTR_SUNRISE: sunrise,
-                        ATTR_SUNSET: sunset,
-                        ATTR_FORECAST_TIME: self._get_utime(i.get("valid"), tzone),
-                        ATTR_FORECAST_CONDITION: self._get(fc_v, "descr"),
-                        ATTR_FORECAST_TEMP: self._get(fc_v, "t", int),
-                        ATTR_FORECAST_PRESSURE: self._get(fc_v, "p", int),
-                        ATTR_FORECAST_HUMIDITY: self._get(fc_v, "hum", int),
-                        ATTR_FORECAST_WIND_SPEED: self._get(fc_v, "ws", int),
-                        ATTR_FORECAST_WIND_BEARING: self._get(fc_v, "wd", int),
-                        ATTR_FORECAST_CLOUDINESS: self._get(fc_v, "cl", int),
-                        ATTR_FORECAST_PRECIPITATION_TYPE: self._get(fc_v, "pt", int),
+                        ATTR_SUNRISE: self._get(day, "sunrise", int),
+                        ATTR_SUNSET: self._get(day, "sunset", int),
+                        ATTR_FORECAST_TIME: self._get_utime(day.get("date"), tzone),
+                        ATTR_FORECAST_CONDITION: self._get(day, "descr"),
+                        ATTR_FORECAST_TEMP: self._get(day, "tmax", int),
+                        ATTR_FORECAST_TEMP_LOW: self._get(day, "tmin", int),
+                        ATTR_FORECAST_PRESSURE: self._get(day, "p", int),
+                        ATTR_FORECAST_HUMIDITY: self._get(day, "hum", int),
+                        ATTR_FORECAST_WIND_SPEED: self._get(day, "ws", int),
+                        ATTR_FORECAST_WIND_BEARING: self._get(day, "wd", int),
+                        ATTR_FORECAST_CLOUDINESS: self._get(day, "cl", int),
+                        ATTR_FORECAST_PRECIPITATION_TYPE: self._get(day, "pt", int),
                         ATTR_FORECAST_PRECIPITATION_AMOUNT: self._get(
-                            fc_v, "prflt", float
+                            day, "prflt", float
                         ),
                         ATTR_FORECAST_PRECIPITATION_INTENSITY: self._get(
-                            fc_v, "pr", int
+                            day, "pr", int
                         ),
-                        ATTR_FORECAST_STORM: (fc_v.get("ts") == 1),
-                        ATTR_FORECAST_GEOMAGNETIC_FIELD: self._get(fc_v, "grade", int),
+                        ATTR_FORECAST_STORM: (self._get(day, "ts") == 1),
+                        ATTR_FORECAST_GEOMAGNETIC_FIELD: self._get(
+                            day, "grademax", int
+                        ),
                     }
                     self._forecast.append(data)
 
-        else:  # self._mode == FORECAST_MODE_DAILY
-            for day in xml.findall("location/day[@descr]"):
-                data = {
-                    ATTR_SUNRISE: self._get(day, "sunrise", int),
-                    ATTR_SUNSET: self._get(day, "sunset", int),
-                    ATTR_FORECAST_TIME: self._get_utime(day.get("date"), tzone),
-                    ATTR_FORECAST_CONDITION: self._get(day, "descr"),
-                    ATTR_FORECAST_TEMP: self._get(day, "tmax", int),
-                    ATTR_FORECAST_TEMP_LOW: self._get(day, "tmin", int),
-                    ATTR_FORECAST_PRESSURE: self._get(day, "p", int),
-                    ATTR_FORECAST_HUMIDITY: self._get(day, "hum", int),
-                    ATTR_FORECAST_WIND_SPEED: self._get(day, "ws", int),
-                    ATTR_FORECAST_WIND_BEARING: self._get(day, "wd", int),
-                    ATTR_FORECAST_CLOUDINESS: self._get(day, "cl", int),
-                    ATTR_FORECAST_PRECIPITATION_TYPE: self._get(day, "pt", int),
-                    ATTR_FORECAST_PRECIPITATION_AMOUNT: self._get(day, "prflt", float),
-                    ATTR_FORECAST_PRECIPITATION_INTENSITY: self._get(day, "pr", int),
-                    ATTR_FORECAST_STORM: (self._get(day, "ts") == 1),
-                    ATTR_FORECAST_GEOMAGNETIC_FIELD: self._get(day, "grademax", int),
-                }
-                self._forecast.append(data)
+        except etree.ParseError:
+            _LOGGER.warning("Can't update weather data! Invalid server response.")
+            return
