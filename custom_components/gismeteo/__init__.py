@@ -107,7 +107,10 @@ class Gismeteo:
         self._mode = mode
         self._cache = Cache(params) if params.get("cache_dir") is not None else None
 
-        self._city_id = self._get_city_id(latitude, longitude)
+        self._latitude = latitude
+        self._longitude = longitude
+        self._city_id = None
+        self._detect_city_id()
         _LOGGER.debug("Nearest city ID: %s", self._city_id)
 
         self._current = {}
@@ -155,19 +158,26 @@ class Gismeteo:
                 return None
         return res
 
-    def _get_city_id(self, lat, lng):
-        """Return the nearest city ID."""
-        url = (BASE_URL + "/cities/?lat={}&lng={}&count=1&lang=en").format(lat, lng)
-        cache_fname = f"city_{lat}_{lng}"
+    def _detect_city_id(self):
+        """Detect the nearest city ID."""
+        url = (BASE_URL + "/cities/?lat={}&lng={}&count=1&lang=en").format(
+            self._latitude, self._longitude
+        )
+        cache_fname = f"city_{self._latitude}_{self._longitude}"
 
         response = self._http_request(url, cache_fname)
         if not response:
-            _LOGGER.error("Can't detect nearest city!")
-            return None
+            _LOGGER.error("Can't detect nearest city! Invalid server response.")
+            return False
 
-        xml = etree.fromstring(response)
-        item = xml.find("item")
-        return self._get(item, "id", int)
+        try:
+            xml = etree.fromstring(response)
+            item = xml.find("item")
+            self._city_id = self._get(item, "id", int)
+            return True
+        except etree.ParseError:
+            _LOGGER.warning("Can't detect nearest city! Invalid server response.")
+            return False
 
     @staticmethod
     def _is_day(testing_time, sunrise_time, sunset_time):
@@ -323,7 +333,9 @@ class Gismeteo:
     def update(self):
         """Get the latest data from Gismeteo."""
         if self._city_id is None:
-            return
+            if not self._detect_city_id():
+                _LOGGER.warning("Can't update weather data!")
+                return
 
         url = (BASE_URL + "/forecast/?city={}&lang=en").format(self._city_id)
         cache_fname = f"forecast_{self._city_id}"

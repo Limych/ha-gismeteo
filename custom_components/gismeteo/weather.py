@@ -10,6 +10,8 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 import logging
+from random import randint
+from time import sleep
 
 import voluptuous as vol
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
@@ -58,6 +60,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
     mode = config.get(CONF_MODE)
 
+    sleep(randint(0, 5))
     gism = Gismeteo(
         latitude,
         longitude,
