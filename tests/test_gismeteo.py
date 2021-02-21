@@ -17,7 +17,7 @@ from asynctest import CoroutineMock
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.gismeteo.const import HTTP_OK
+from custom_components.gismeteo.const import FORECAST_MODE_HOURLY, HTTP_OK
 from custom_components.gismeteo.gismeteo import (
     ApiError,
     Gismeteo,
@@ -73,7 +73,7 @@ async def test__async_get_data(mock_get):
     mock_get.return_value.__aenter__.return_value.text = CoroutineMock(
         return_value="qwe"
     )
-
+    #
     async with ClientSession() as client:
         gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
         city_id = await gismeteo._async_get_data("some_url")
@@ -81,7 +81,7 @@ async def test__async_get_data(mock_get):
     assert city_id == "qwe"
 
     mock_get.return_value.__aenter__.return_value.status = 404
-
+    #
     async with ClientSession() as client:
         gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
         with raises(ApiError):
@@ -91,11 +91,9 @@ async def test__async_get_data(mock_get):
 # pylint: disable=protected-access
 async def test__async_get_nearest_city_id():
     """Test with valid location data."""
-    city_location = load_fixture("city_location.xml")
-
     with patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        return_value=city_location,
+        return_value=load_fixture("city_location.xml"),
     ):
         async with ClientSession() as client:
             gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
@@ -103,27 +101,51 @@ async def test__async_get_nearest_city_id():
 
     assert city_id == 167413
 
+    with patch(
+        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+        return_value=None,
+    ):
+        async with ClientSession() as client:
+            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            city_id = await gismeteo._async_get_nearest_city_id()
+
+    assert city_id is None
+
+    with patch(
+        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+        return_value="qwe",
+    ):
+        async with ClientSession() as client:
+            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            city_id = await gismeteo._async_get_nearest_city_id()
+
+    assert city_id is None
+
 
 # pylint: disable=protected-access
 def test__get_utime():
     """Test _get_utime service method."""
     assert Gismeteo._get_utime("2021-02-21T16:00:00", 180) == 1613912400
     assert Gismeteo._get_utime("2021-02-21T16:00:00", 0) == 1613923200
+    assert Gismeteo._get_utime("2021-02-21", 0) == 1613865600
+
+    with raises(ValueError):
+        Gismeteo._get_utime("2021-02-", 0)
 
 
-async def get_gismeteo():
+async def get_gismeteo(mode=FORECAST_MODE_HOURLY):
     """Prepare Gismeteo object."""
-    forecast_data = load_fixture("forecast_data.xml")
-
     with patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_nearest_city_id",
         return_value=6572,
     ), patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        return_value=forecast_data,
+        return_value=load_fixture("forecast_data.xml"),
     ):
         async with ClientSession() as client:
-            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            gismeteo = Gismeteo(
+                client, latitude=LATITUDE, longitude=LONGITUDE, mode=mode
+            )
 
             assert gismeteo.current == {}
             assert await gismeteo.async_update() is True
@@ -147,6 +169,9 @@ async def test_condition():
 
     assert gismeteo.condition() == "snowy"
     assert gismeteo.condition(gismeteo.current) == "snowy"
+
+    # pylint: disable=fixme
+    # todo: All conditions
 
 
 async def test_temperature():
