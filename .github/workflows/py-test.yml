@@ -42,6 +42,10 @@ jobs:
           fi
           pip install pytest-xdist
 
+          if [ -d custom_components ]; then
+            echo '"""Stub."""' >custom_components/__init__.py
+          fi
+
       - name: "Lint with flake8 & pylint"
         run: |
           flake8 ${{ env.package }} tests
@@ -64,7 +68,7 @@ jobs:
       max-parallel: 4
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9]
     steps:
       - name: "Checkout code"
         uses: actions/checkout@master
