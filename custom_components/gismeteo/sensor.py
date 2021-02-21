@@ -25,7 +25,9 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.storage import STORAGE_DIR
 import voluptuous as vol
 
-from . import ATTRIBUTION, Gismeteo
+from custom_components.gismeteo.gismeteo import Gismeteo
+
+from . import ATTRIBUTION
 from .const import (
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
@@ -38,9 +40,9 @@ from .const import (
     CONF_LANGUAGE,
     DEFAULT_NAME,
     FORECAST_SENSOR_TYPE,
-    MIN_TIME_BETWEEN_UPDATES,
     PRECIPITATION_AMOUNT,
     SENSOR_TYPES,
+    UPDATE_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,7 +81,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         params={
             "timezone": str(hass.config.time_zone),
             "cache_dir": cache_dir,
-            "cache_time": MIN_TIME_BETWEEN_UPDATES.total_seconds(),
+            "cache_time": UPDATE_INTERVAL.total_seconds(),
         },
     )
 

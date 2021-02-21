@@ -101,6 +101,10 @@ jobs:
           fi
           pip install pytest-xdist
 
+          if [ -d custom_components ]; then
+            echo '"""Stub."""' >custom_components/__init__.py
+          fi
+
       - name: "Run tests with pytest"
         run: |
           pytest --basetemp=$RUNNER_TEMP --durations=10 -n auto --dist=loadfile -qq -o console_output_style=count -p no:sugar

@@ -13,26 +13,28 @@ import logging
 from random import randint
 from time import sleep
 
-import voluptuous as vol
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.const import (
-    TEMP_CELSIUS,
+    CONF_API_KEY,
     CONF_LATITUDE,
     CONF_LONGITUDE,
-    CONF_NAME,
-    CONF_API_KEY,
     CONF_MODE,
+    CONF_NAME,
+    TEMP_CELSIUS,
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.storage import STORAGE_DIR
+import voluptuous as vol
 
-from . import Gismeteo, ATTRIBUTION
+from custom_components.gismeteo.gismeteo import Gismeteo
+
+from . import ATTRIBUTION
 from .const import (
-    DEFAULT_NAME,
-    MIN_TIME_BETWEEN_UPDATES,
     CONF_CACHE_DIR,
-    FORECAST_MODE_HOURLY,
+    DEFAULT_NAME,
     FORECAST_MODE_DAILY,
+    FORECAST_MODE_HOURLY,
+    UPDATE_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,7 +70,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         params={
             "timezone": str(hass.config.time_zone),
             "cache_dir": cache_dir,
-            "cache_time": MIN_TIME_BETWEEN_UPDATES.total_seconds(),
+            "cache_time": UPDATE_INTERVAL.total_seconds(),
         },
     )
 
