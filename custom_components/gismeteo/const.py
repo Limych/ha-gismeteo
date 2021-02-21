@@ -98,7 +98,7 @@ SENSOR_TYPES = {
     "wind_bearing": ["Wind bearing", DEGREE, "mdi:weather-windy"],
     "humidity": ["Humidity", PERCENTAGE, "mdi:water-percent"],
     "pressure": ["Pressure", PRESSURE_HPA, "mdi:gauge"],
-    "clouds": ["Cloud coverage", PERCENTAGE, "mdi:weather-partlycloudy"],
+    "clouds": ["Cloud coverage", PERCENTAGE, "mdi:weather-partly-cloudy"],
     "rain": ["Rain", LENGTH_MILLIMETERS, "mdi:weather-rainy"],
     "snow": ["Snow", LENGTH_MILLIMETERS, "mdi:weather-snowy"],
     "storm": ["Storm", None, "mdi:weather-lightning"],
