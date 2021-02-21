@@ -2,7 +2,9 @@
     "codeowners": [
         "@limych"
     ],
-    "dependencies": [],
+    "dependencies": [
+        "weather"
+    ],
     "documentation": "https://github.com/Limych/HomeAssistantComponents/tree/master/custom_components/gismeteo",
     "domain": "gismeteo",
     "name": "Gismeteo",
