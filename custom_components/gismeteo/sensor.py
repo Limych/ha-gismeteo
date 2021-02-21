@@ -13,34 +13,34 @@ import logging
 from random import randint
 from time import sleep
 
-import voluptuous as vol
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION, PLATFORM_SCHEMA
 from homeassistant.const import (
     ATTR_ATTRIBUTION,
+    CONF_API_KEY,
     CONF_MONITORED_CONDITIONS,
     CONF_NAME,
-    CONF_API_KEY,
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.storage import STORAGE_DIR
+import voluptuous as vol
 
-from . import Gismeteo, ATTRIBUTION
+from . import ATTRIBUTION, Gismeteo
 from .const import (
-    DEFAULT_NAME,
-    MIN_TIME_BETWEEN_UPDATES,
-    CONF_CACHE_DIR,
     ATTR_WEATHER_CLOUDINESS,
-    ATTR_WEATHER_PRECIPITATION_TYPE,
+    ATTR_WEATHER_GEOMAGNETIC_FIELD,
     ATTR_WEATHER_PRECIPITATION_AMOUNT,
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
+    ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
-    ATTR_WEATHER_GEOMAGNETIC_FIELD,
-    SENSOR_TYPES,
-    FORECAST_SENSOR_TYPE,
+    CONF_CACHE_DIR,
     CONF_FORECAST,
     CONF_LANGUAGE,
+    DEFAULT_NAME,
+    FORECAST_SENSOR_TYPE,
+    MIN_TIME_BETWEEN_UPDATES,
     PRECIPITATION_AMOUNT,
+    SENSOR_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)

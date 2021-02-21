@@ -14,10 +14,10 @@ from datetime import timedelta
 
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.const import (
-    TEMP_CELSIUS,
-    SPEED_METERS_PER_SECOND,
     DEGREE,
     PRESSURE_HPA,
+    SPEED_METERS_PER_SECOND,
+    TEMP_CELSIUS,
 )
 
 try:
@@ -25,7 +25,7 @@ try:
 except ImportError:
     from homeassistant.const import UNIT_PERCENTAGE as PERCENTAGE
 
-BASE_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
+ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
 
 MMHG2HPA = 1.333223684
 MS2KMH = 3.6
@@ -39,7 +39,7 @@ FORECAST_MODE_DAILY = "daily"
 
 DEFAULT_NAME = "Gismeteo"
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=5)
+UPDATE_INTERVAL = timedelta(minutes=5)
 
 CONDITION_FOG_CLASSES = [
     11,
@@ -105,3 +105,6 @@ SENSOR_TYPES = {
     "geomagnetic": ["Geomagnetic field", "", "mdi:magnet-on"],
 }
 FORECAST_SENSOR_TYPE = ["Forecast", None, None]
+
+HTTP_HEADERS: dict = {"Content-Encoding": "gzip"}
+HTTP_OK: int = 200
