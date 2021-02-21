@@ -40,7 +40,7 @@ jobs:
           elif [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
-          pip install pytest-xdist
+          pip install pytest-xdist coveralls
 
           if [ -d custom_components ]; then
             echo '"""Stub."""' >custom_components/__init__.py

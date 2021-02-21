@@ -5,6 +5,8 @@
 [![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-gismeteo?label=release&style=popout)](https://github.com/Limych/ha-gismeteo/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout)](https://github.com/Limych/ha-gismeteo/commits/master)
 [![License](https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout)](LICENSE.md)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Limych/ha-gismeteo/Python%20testing)
+[![Coverage Status](https://img.shields.io/coveralls/github/Limych/ha-gismeteo?style=popout)](https://coveralls.io/github/Limych/ha-gismeteo)
 ![Requires.io](https://img.shields.io/requires/github/Limych/ha-gismeteo)
 
 [![hacs](https://img.shields.io/badge/HACS-Default-orange.svg?style=popout)][hacs]
