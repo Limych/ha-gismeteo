@@ -17,7 +17,6 @@ async def init_integration(hass, forecast=False) -> MockConfigEntry:
         title="Home",
         unique_id="0123456",
         data={
-            "api_key": "32-character-string-1234567890qw",
             "latitude": 55.55,
             "longitude": 122.12,
             "name": "Home",
