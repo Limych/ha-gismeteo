@@ -165,6 +165,9 @@ I put a lot of work into making this repo and component available and updated to
 >   6 = Severe geomagnetic storm\
 >   7 = Hard geomagnetic storm\
 >   8 = Extreme geomagnetic storm
+>
+> **water_temperature**\
+>   The current temperature of water.
 
 ## Track updates
 

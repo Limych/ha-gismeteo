@@ -285,6 +285,14 @@ async def test_temperature():
     assert gismeteo.temperature(gismeteo.current) == -7.0
 
 
+async def test_water_temperature():
+    """Test current temperature of water."""
+    gismeteo = await init_gismeteo()
+
+    assert gismeteo.water_temperature() == 3.0
+    assert gismeteo.water_temperature(gismeteo.current) == 3.0
+
+
 async def test_pressure_mmhg():
     """Test current pressure in mmHg."""
     gismeteo = await init_gismeteo()

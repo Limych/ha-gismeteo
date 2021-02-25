@@ -83,6 +83,7 @@ ATTR_WEATHER_PRECIPITATION_INTENSITY = "precipitation_intensity"
 ATTR_WEATHER_STORM = "storm"
 ATTR_WEATHER_GEOMAGNETIC_FIELD = "gm_field"
 ATTR_WEATHER_PHENOMENON = "phenomenon"
+ATTR_WEATHER_WATER_TEMPERATURE = "water_temperature"
 
 ATTR_FORECAST_HUMIDITY = "humidity"
 ATTR_FORECAST_PRESSURE = "pressure"
@@ -164,6 +165,12 @@ SENSOR_TYPES = {
         ATTR_ICON: "mdi:magnet-on",
         ATTR_LABEL: "Geomagnetic field",
         ATTR_UNIT_OF_MEASUREMENT: "",
+    },
+    "water_temperature": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Water Temperature",
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
 }
 FORECAST_SENSOR_TYPE = ["Forecast", None, None]

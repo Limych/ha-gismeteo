@@ -67,6 +67,7 @@ from .const import (
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
     ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
+    ATTR_WEATHER_WATER_TEMPERATURE,
     CONDITION_FOG_CLASSES,
     ENDPOINT_URL,
     FORECAST_MODE_DAILY,
@@ -276,6 +277,12 @@ class Gismeteo:
         temperature = src.get(ATTR_WEATHER_TEMPERATURE)
         return float(temperature) if temperature is not None else STATE_UNKNOWN
 
+    def water_temperature(self, src=None):
+        """Return the current temperature of water."""
+        src = src or self._current
+        temperature = src.get(ATTR_WEATHER_WATER_TEMPERATURE)
+        return float(temperature) if temperature is not None else STATE_UNKNOWN
+
     def pressure_mmhg(self, src=None):
         """Return the current pressure in mmHg."""
         src = src or self._current
@@ -395,6 +402,7 @@ class Gismeteo:
                 ATTR_WEATHER_STORM: (self._get(current_v, "ts") == 1),
                 ATTR_WEATHER_GEOMAGNETIC_FIELD: self._get(current_v, "grade", int),
                 ATTR_WEATHER_PHENOMENON: self._get(current_v, "ph", int),
+                ATTR_WEATHER_WATER_TEMPERATURE: self._get(current_v, "water_t", int),
             }
 
             self._forecast = []
