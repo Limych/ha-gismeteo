@@ -173,7 +173,12 @@ SENSOR_TYPES = {
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
 }
-FORECAST_SENSOR_TYPE = ["Forecast", None, None]
+FORECAST_SENSOR_TYPE = {
+    ATTR_DEVICE_CLASS: None,
+    ATTR_ICON: None,
+    ATTR_LABEL: "Forecast",
+    ATTR_UNIT_OF_MEASUREMENT: None,
+}
 
 HTTP_HEADERS: dict = {"Content-Encoding": "gzip"}
 HTTP_OK: int = 200

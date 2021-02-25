@@ -40,6 +40,7 @@ from .const import (
     CONF_LANGUAGE,
     COORDINATOR,
     DEFAULT_NAME,
+    FORECAST_SENSOR_TYPE,
     NAME,
     PRECIPITATION_AMOUNT,
     SENSOR_TYPES,
@@ -71,55 +72,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         )
     )
 
-    # if None in (hass.config.latitude, hass.config.longitude):
-    #     _LOGGER.error("Latitude or longitude not set in Home Assistant config")
-    #     return
-    # latitude = round(hass.config.latitude, 6)
-    # longitude = round(hass.config.longitude, 6)
-    #
-    # name = config.get(CONF_NAME)
-    # forecast = config.get(CONF_FORECAST)
-    # cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
-    #
-    # sleep(randint(0, 5))
-    # websession = async_get_clientsession(hass)
-    # gism = Gismeteo(
-    #     websession,
-    #     latitude=latitude,
-    #     longitude=longitude,
-    #     params={
-    #         "timezone": str(hass.config.time_zone),
-    #         "cache_dir": cache_dir,
-    #         "cache_time": UPDATE_INTERVAL.total_seconds(),
-    #     },
-    # )
-    #
-    # dev = []
-    # for variable in config[CONF_MONITORED_CONDITIONS]:
-    #     dev.append(
-    #         GismeteoSensor(
-    #             name,
-    #             gism,
-    #             variable,
-    #             SENSOR_TYPES[variable][1],
-    #             SENSOR_TYPES[variable][2],
-    #         )
-    #     )
-    #
-    # if forecast:
-    #     SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-    #     dev.append(
-    #         GismeteoSensor(
-    #             name,
-    #             gism,
-    #             "forecast",
-    #             SENSOR_TYPES["forecast"][1],
-    #             SENSOR_TYPES["forecast"][2],
-    #         )
-    #     )
-    #
-    # add_entities(dev, True)
-
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Add Gismeteo entities from a config_entry."""
@@ -131,15 +83,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for kind in config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
         sensors.append(GismeteoSensor(name, kind, coordinator))
 
-    # if coordinator.forecast:
-    #     for sensor in FORECAST_SENSOR_TYPES:
-    #         for day in FORECAST_DAYS:
-    #             # Some air quality/allergy sensors are only available for certain
-    #             # locations.
-    #             if sensor in coordinator.data[ATTR_FORECAST][0]:
-    #                 sensors.append(
-    #                     GismeteoSensor(name, sensor, coordinator, forecast_day=day)
-    #                 )
+    if config_entry.data.get(CONF_FORECAST, True):
+        SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
+        sensors.append(GismeteoSensor(name, "forecast", coordinator))
 
     async_add_entities(sensors, False)
 
