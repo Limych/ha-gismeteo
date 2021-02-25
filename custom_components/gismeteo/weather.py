@@ -10,10 +10,9 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 import logging
-from random import randint
-from time import sleep
 
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_LATITUDE,
@@ -23,19 +22,19 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.storage import STORAGE_DIR
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import voluptuous as vol
 
-from custom_components.gismeteo.gismeteo import Gismeteo
-
-from . import ATTRIBUTION
+from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
 from .const import (
     CONF_CACHE_DIR,
+    COORDINATOR,
     DEFAULT_NAME,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    UPDATE_INTERVAL,
+    NAME,
 )
+from .gismeteo import Gismeteo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,40 +53,38 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 
 # pylint: disable=unused-argument
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Gismeteo weather platform."""
-    name = config.get(CONF_NAME)
-    latitude = config.get(CONF_LATITUDE, round(hass.config.latitude, 6))
-    longitude = config.get(CONF_LONGITUDE, round(hass.config.longitude, 6))
-    cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
-    mode = config.get(CONF_MODE)
-
-    sleep(randint(0, 5))
-    gism = Gismeteo(
-        latitude,
-        longitude,
-        mode,
-        params={
-            "timezone": str(hass.config.time_zone),
-            "cache_dir": cache_dir,
-            "cache_time": UPDATE_INTERVAL.total_seconds(),
-        },
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=dict(config)
+        )
     )
 
-    add_entities([GismeteoWeather(name, gism)], True)
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Add a Gismeteo weather entity from a config_entry."""
+    name = config_entry.data[CONF_NAME]
+
+    coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+
+    async_add_entities([GismeteoWeather(name, coordinator)], False)
 
 
-class GismeteoWeather(WeatherEntity):
+class GismeteoWeather(CoordinatorEntity, WeatherEntity):
     """Implementation of an Gismeteo sensor."""
 
-    def __init__(self, station_name, weather_data):
-        """Initialize the sensor."""
-        self._station_name = station_name
-        self._wd = weather_data
+    def __init__(self, name: str, coordinator: GismeteoDataUpdateCoordinator):
+        """Initialize."""
+        super().__init__(coordinator)
 
-    def update(self):
-        """Get the latest data from Gismeteo and updates the states."""
-        self._wd.update()
+        self._name = name
+        self._attrs = {}
+
+    @property
+    def name(self):
+        """Return the name."""
+        return self._name
 
     @property
     def attribution(self):
@@ -95,19 +92,32 @@ class GismeteoWeather(WeatherEntity):
         return ATTRIBUTION
 
     @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._station_name
+    def unique_id(self):
+        """Return a unique_id for this entity."""
+        return self.coordinator.location_key
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, self.coordinator.location_key)},
+            "name": NAME,
+            "entry_type": "service",
+        }
+
+    @property
+    def _gismeteo(self) -> Gismeteo:
+        return self.coordinator.gismeteo
 
     @property
     def condition(self):
         """Return the current condition."""
-        return self._wd.condition()
+        return self._gismeteo.condition()
 
     @property
     def temperature(self):
         """Return the current temperature."""
-        return self._wd.temperature()
+        return self._gismeteo.temperature()
 
     @property
     def temperature_unit(self):
@@ -117,24 +127,24 @@ class GismeteoWeather(WeatherEntity):
     @property
     def pressure(self):
         """Return the current pressure."""
-        return self._wd.pressure_hpa()
+        return self._gismeteo.pressure_hpa()
 
     @property
     def humidity(self):
         """Return the name of the sensor."""
-        return self._wd.humidity()
+        return self._gismeteo.humidity()
 
     @property
     def wind_bearing(self):
         """Return the current wind bearing."""
-        return self._wd.wind_bearing()
+        return self._gismeteo.wind_bearing()
 
     @property
     def wind_speed(self):
         """Return the current windspeed."""
-        return self._wd.wind_speed_kmh()
+        return self._gismeteo.wind_speed_kmh()
 
     @property
     def forecast(self):
         """Return the forecast array."""
-        return self._wd.forecast()
+        return self._gismeteo.forecast()

@@ -18,6 +18,19 @@ from typing import Any, Callable, Optional
 from aiohttp import ClientSession
 import defusedxml.ElementTree as etree  # type: ignore
 from homeassistant.components.weather import (
+    ATTR_CONDITION_CLEAR_NIGHT,
+    ATTR_CONDITION_CLOUDY,
+    ATTR_CONDITION_FOG,
+    ATTR_CONDITION_LIGHTNING,
+    ATTR_CONDITION_LIGHTNING_RAINY,
+    ATTR_CONDITION_PARTLYCLOUDY,
+    ATTR_CONDITION_POURING,
+    ATTR_CONDITION_RAINY,
+    ATTR_CONDITION_SNOWY,
+    ATTR_CONDITION_SNOWY_RAINY,
+    ATTR_CONDITION_SUNNY,
+    ATTR_CONDITION_WINDY,
+    ATTR_CONDITION_WINDY_VARIANT,
     ATTR_FORECAST_CONDITION,
     ATTR_FORECAST_PRECIPITATION,
     ATTR_FORECAST_TEMP,
@@ -76,7 +89,7 @@ class InvalidCoordinatesError(Exception):
 
 
 class ApiError(Exception):
-    """Raised when AccuWeather API request ended in error."""
+    """Raised when Gismeteo API request ended in error."""
 
     def __init__(self, status):
         """Initialize."""
@@ -90,16 +103,18 @@ class Gismeteo:
     def __init__(
         self,
         session: ClientSession,
-        latitude=None,
-        longitude=None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        location_key: Optional[int] = None,
         mode=FORECAST_MODE_HOURLY,
-        params=None,
+        params: Optional[dict] = None,
     ):
         """Initialize."""
         params = params or {}
 
-        if not self._valid_coordinates(latitude, longitude):
-            raise InvalidCoordinatesError("Your coordinates are invalid.")
+        if not location_key:
+            if not self._valid_coordinates(latitude, longitude):
+                raise InvalidCoordinatesError("Your coordinates are invalid.")
 
         _LOGGER.debug("Place coordinates: %s, %s", latitude, longitude)
         _LOGGER.debug("Forecast mode: %s", mode)
@@ -110,7 +125,8 @@ class Gismeteo:
 
         self._latitude = latitude
         self._longitude = longitude
-        self._city_id = None
+        self._location_key = location_key
+        self._location_name = None
 
         self._current = {}
         self._forecast = []
@@ -137,6 +153,16 @@ class Gismeteo:
         """Return current weather data."""
         return self._current
 
+    @property
+    def location_name(self):
+        """Return location name."""
+        return self._location_name
+
+    @property
+    def location_key(self):
+        """Return location key."""
+        return self._location_key
+
     async def _async_get_data(self, url: str, cache_fname=None) -> str:
         """Retreive data from Gismeteo API and cache results."""
         _LOGGER.debug("Requesting URL %s", url)
@@ -158,6 +184,24 @@ class Gismeteo:
 
         return data
 
+    async def async_get_location(self):
+        """Retreive location data from Gismeteo."""
+        url = (ENDPOINT_URL + "/cities/?lat={}&lng={}&count=1&lang=en").format(
+            self._latitude, self._longitude
+        )
+        cache_fname = f"location_{self._latitude}_{self._longitude}"
+
+        response = await self._async_get_data(url, cache_fname)
+        try:
+            xml = etree.fromstring(response)
+            item = xml.find("item")
+            self._location_key = self._get(item, "id", int)
+            self._location_name = self._get(item, "n")
+        except (etree.ParseError, TypeError, AttributeError) as ex:
+            raise ApiError(
+                "Can't retrieve location data! Invalid server response."
+            ) from ex
+
     @staticmethod
     def _get(var: dict, ind: str, func: Optional[Callable] = None) -> Any:
         res = var.get(ind)
@@ -167,26 +211,6 @@ class Gismeteo:
             except (TypeError, ValueError, ArithmeticError):
                 return None
         return res
-
-    async def _async_get_nearest_city_id(self) -> Optional[int]:
-        """Get the nearest city ID."""
-        url = (ENDPOINT_URL + "/cities/?lat={}&lng={}&count=1&lang=en").format(
-            self._latitude, self._longitude
-        )
-        cache_fname = f"city_{self._latitude}_{self._longitude}"
-
-        response = await self._async_get_data(url, cache_fname)
-        if not response:
-            _LOGGER.error("Can't detect nearest city! Invalid server response.")
-            return None
-
-        try:
-            xml = etree.fromstring(response)
-            item = xml.find("item")
-            return self._get(item, "id", int)
-        except etree.ParseError:
-            _LOGGER.warning("Can't detect nearest city! Invalid server response.")
-            return None
 
     @staticmethod
     def _is_day(testing_time, sunrise_time, sunset_time):
@@ -206,41 +230,43 @@ class Gismeteo:
                 src.get(ATTR_SUNRISE),
                 src.get(ATTR_SUNSET),
             ):
-                cond = "sunny"  # Sunshine
+                cond = ATTR_CONDITION_SUNNY  # Sunshine
             else:
-                cond = "clear-night"  # Clear night
+                cond = ATTR_CONDITION_CLEAR_NIGHT  # Clear night
         elif cld == 1:
-            cond = "partlycloudy"  # A few clouds
+            cond = ATTR_CONDITION_PARTLYCLOUDY  # A few clouds
         elif cld == 2:
-            cond = "partlycloudy"  # A some clouds
+            cond = ATTR_CONDITION_PARTLYCLOUDY  # A some clouds
         else:
-            cond = "cloudy"  # Many clouds
+            cond = ATTR_CONDITION_CLOUDY  # Many clouds
 
         pr_type = src.get(ATTR_WEATHER_PRECIPITATION_TYPE)
         pr_int = src.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)
         if src.get(ATTR_WEATHER_STORM):
-            cond = "lightning"  # Lightning/ thunderstorms
+            cond = ATTR_CONDITION_LIGHTNING  # Lightning/ thunderstorms
             if pr_type != 0:
-                cond = "lightning-rainy"  # Lightning/ thunderstorms and rain
+                cond = (
+                    ATTR_CONDITION_LIGHTNING_RAINY  # Lightning/ thunderstorms and rain
+                )
         elif pr_type == 1:
-            cond = "rainy"  # Rain
+            cond = ATTR_CONDITION_RAINY  # Rain
             if pr_int == 3:
-                cond = "pouring"  # Pouring rain
+                cond = ATTR_CONDITION_POURING  # Pouring rain
         elif pr_type == 2:
-            cond = "snowy"  # Snow
+            cond = ATTR_CONDITION_SNOWY  # Snow
         elif pr_type == 3:
-            cond = "snowy-rainy"  # Snow and Rain
+            cond = ATTR_CONDITION_SNOWY_RAINY  # Snow and Rain
         elif self.wind_speed_ms(src) > 10.8:
-            if cond == "cloudy":
-                cond = "windy-variant"  # Wind and clouds
+            if cond == ATTR_CONDITION_CLOUDY:
+                cond = ATTR_CONDITION_WINDY_VARIANT  # Wind and clouds
             else:
-                cond = "windy"  # Wind
+                cond = ATTR_CONDITION_WINDY  # Wind
         elif (
             cld == 0
             and src.get(ATTR_WEATHER_PHENOMENON) is not None
             and src.get(ATTR_WEATHER_PHENOMENON) in CONDITION_FOG_CLASSES
         ):
-            cond = "fog"  # Fog
+            cond = ATTR_CONDITION_FOG  # Fog
 
         return cond
 
@@ -340,20 +366,13 @@ class Gismeteo:
 
     async def async_update(self) -> bool:
         """Get the latest data from Gismeteo."""
-        if self._city_id is None:
-            self._city_id = await self._async_get_nearest_city_id()
-            if self._city_id is None:
-                _LOGGER.warning("Can't update weather data!")
-                return False
+        if not self._location_key:
+            await self.async_get_location()
 
-        url = (ENDPOINT_URL + "/forecast/?city={}&lang=en").format(self._city_id)
-        cache_fname = f"forecast_{self._city_id}"
+        url = (ENDPOINT_URL + "/forecast/?city={}&lang=en").format(self._location_key)
+        cache_fname = f"forecast_{self._location_key}"
 
         response = await self._async_get_data(url, cache_fname)
-        if not response:
-            _LOGGER.warning("Can't update weather data! Invalid server response.")
-            return False
-
         try:
             xml = etree.fromstring(response)
             tzone = int(xml.find("location").get("tzone"))
@@ -443,6 +462,7 @@ class Gismeteo:
 
             return True
 
-        except etree.ParseError:
-            _LOGGER.warning("Can't update weather data! Invalid server response.")
-            return False
+        except (etree.ParseError, TypeError, AttributeError) as ex:
+            raise ApiError(
+                "Can't update weather data! Invalid server response."
+            ) from ex

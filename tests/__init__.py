@@ -1,18 +1,24 @@
 """Tests for GisMeteo integration."""
 from unittest.mock import patch
 
-from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture
+from homeassistant.config_entries import ENTRY_STATE_LOADED
+from homeassistant.util import utcnow
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+    load_fixture,
+)
 
-from custom_components.gismeteo import DOMAIN
+from custom_components.gismeteo import DOMAIN, UPDATE_INTERVAL
 
 
-async def init_integration(hass, forecast=False) -> MockConfigEntry:
-    """Set up the Gismeteo integration in Home Assistant."""
+def get_mock_config_entry(forecast=False) -> MockConfigEntry:
+    """Make mock configs."""
     options = {}
     if forecast:
         options["forecast"] = True
 
-    entry = MockConfigEntry(
+    return MockConfigEntry(
         domain=DOMAIN,
         title="Home",
         unique_id="0123456",
@@ -24,17 +30,37 @@ async def init_integration(hass, forecast=False) -> MockConfigEntry:
         options=options,
     )
 
-    forecast = load_fixture("forecast_data.xml")
+
+async def init_integration(hass, forecast=False) -> MockConfigEntry:
+    """Set up the Gismeteo integration in Home Assistant."""
+    entry = get_mock_config_entry(forecast)
 
     with patch(
-        "custom_components.gismeteo.Gismeteo._get_nearest_city_id",
-        return_value=372,
-    ), patch(
-        "custom_components.gismeteo.Gismeteo._http_request",
-        return_value=forecast,
+        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+        return_value=load_fixture("forecast.xml"),
     ):
         entry.add_to_hass(hass)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
     return entry
+
+
+async def test_update_interval(hass):
+    """Test correct update interval."""
+    entry = await init_integration(hass)
+
+    assert entry.state == ENTRY_STATE_LOADED
+
+    future = utcnow() + UPDATE_INTERVAL
+
+    with patch(
+        "custom_components.gismeteo.gismeteo.Gismeteo.async_update",
+    ) as mock_current:
+
+        assert mock_current.call_count == 0
+
+        async_fire_time_changed(hass, future)
+        await hass.async_block_till_done()
+
+        assert mock_current.call_count == 1

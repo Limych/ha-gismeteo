@@ -126,8 +126,9 @@ def test_read_cache(config, cache_dir):
         assert cache.read_cache(i) == con
 
 
-def test_save_cache(config, cache_dir):
+def test_save_cache(config):
     """Cache controller tests."""
+    config["cache_dir"] = os.path.join(config["cache_dir"], os.urandom(3).hex())
     cache = Cache(config)
 
     for _ in range(8):

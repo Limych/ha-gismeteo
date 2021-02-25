@@ -10,25 +10,25 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 import logging
-from random import randint
-from time import sleep
 
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION, PLATFORM_SCHEMA
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     ATTR_ATTRIBUTION,
+    ATTR_DEVICE_CLASS,
+    ATTR_ICON,
+    ATTR_UNIT_OF_MEASUREMENT,
     CONF_API_KEY,
     CONF_MONITORED_CONDITIONS,
     CONF_NAME,
 )
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.storage import STORAGE_DIR
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import voluptuous as vol
 
-from custom_components.gismeteo.gismeteo import Gismeteo
-
-from . import ATTRIBUTION
+from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
 from .const import (
+    ATTR_LABEL,
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
     ATTR_WEATHER_PRECIPITATION_AMOUNT,
@@ -38,12 +38,13 @@ from .const import (
     CONF_CACHE_DIR,
     CONF_FORECAST,
     CONF_LANGUAGE,
+    COORDINATOR,
     DEFAULT_NAME,
-    FORECAST_SENSOR_TYPE,
+    NAME,
     PRECIPITATION_AMOUNT,
     SENSOR_TYPES,
-    UPDATE_INTERVAL,
 )
+from .gismeteo import Gismeteo
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,95 +64,148 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 # pylint: disable=unused-argument
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the Gismeteo weather platform."""
-    if None in (hass.config.latitude, hass.config.longitude):
-        _LOGGER.error("Latitude or longitude not set in Home Assistant config")
-        return
-    latitude = round(hass.config.latitude, 6)
-    longitude = round(hass.config.longitude, 6)
-
-    name = config.get(CONF_NAME)
-    forecast = config.get(CONF_FORECAST)
-    cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
-
-    sleep(randint(0, 5))
-    gism = Gismeteo(
-        latitude,
-        longitude,
-        params={
-            "timezone": str(hass.config.time_zone),
-            "cache_dir": cache_dir,
-            "cache_time": UPDATE_INTERVAL.total_seconds(),
-        },
+    """Set up the Gismeteo sensor platform."""
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data=dict(config)
+        )
     )
 
-    dev = []
-    for variable in config[CONF_MONITORED_CONDITIONS]:
-        dev.append(
-            GismeteoSensor(
-                name,
-                gism,
-                variable,
-                SENSOR_TYPES[variable][1],
-                SENSOR_TYPES[variable][2],
-            )
-        )
+    # if None in (hass.config.latitude, hass.config.longitude):
+    #     _LOGGER.error("Latitude or longitude not set in Home Assistant config")
+    #     return
+    # latitude = round(hass.config.latitude, 6)
+    # longitude = round(hass.config.longitude, 6)
+    #
+    # name = config.get(CONF_NAME)
+    # forecast = config.get(CONF_FORECAST)
+    # cache_dir = config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR))
+    #
+    # sleep(randint(0, 5))
+    # websession = async_get_clientsession(hass)
+    # gism = Gismeteo(
+    #     websession,
+    #     latitude=latitude,
+    #     longitude=longitude,
+    #     params={
+    #         "timezone": str(hass.config.time_zone),
+    #         "cache_dir": cache_dir,
+    #         "cache_time": UPDATE_INTERVAL.total_seconds(),
+    #     },
+    # )
+    #
+    # dev = []
+    # for variable in config[CONF_MONITORED_CONDITIONS]:
+    #     dev.append(
+    #         GismeteoSensor(
+    #             name,
+    #             gism,
+    #             variable,
+    #             SENSOR_TYPES[variable][1],
+    #             SENSOR_TYPES[variable][2],
+    #         )
+    #     )
+    #
+    # if forecast:
+    #     SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
+    #     dev.append(
+    #         GismeteoSensor(
+    #             name,
+    #             gism,
+    #             "forecast",
+    #             SENSOR_TYPES["forecast"][1],
+    #             SENSOR_TYPES["forecast"][2],
+    #         )
+    #     )
+    #
+    # add_entities(dev, True)
 
-    if forecast:
-        SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-        dev.append(
-            GismeteoSensor(
-                name,
-                gism,
-                "forecast",
-                SENSOR_TYPES["forecast"][1],
-                SENSOR_TYPES["forecast"][2],
-            )
-        )
 
-    add_entities(dev, True)
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Add Gismeteo entities from a config_entry."""
+    name = config_entry.data[CONF_NAME]
+
+    coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+
+    sensors = []
+    for kind in config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
+        sensors.append(GismeteoSensor(name, kind, coordinator))
+
+    # if coordinator.forecast:
+    #     for sensor in FORECAST_SENSOR_TYPES:
+    #         for day in FORECAST_DAYS:
+    #             # Some air quality/allergy sensors are only available for certain
+    #             # locations.
+    #             if sensor in coordinator.data[ATTR_FORECAST][0]:
+    #                 sensors.append(
+    #                     GismeteoSensor(name, sensor, coordinator, forecast_day=day)
+    #                 )
+
+    async_add_entities(sensors, False)
 
 
-class GismeteoSensor(Entity):
+class GismeteoSensor(CoordinatorEntity):
     """Implementation of an Gismeteo sensor."""
 
-    def __init__(self, station_name, weather_data, sensor_type, temp_unit, icon):
+    def __init__(
+        self,
+        name: str,
+        kind: str,
+        coordinator: GismeteoDataUpdateCoordinator,
+    ):
         """Initialize the sensor."""
-        self.client_name = station_name
-        self._name = SENSOR_TYPES[sensor_type][0]
-        self._wd = weather_data
-        self.temp_unit = temp_unit
-        self.type = sensor_type
+        super().__init__(coordinator)
+
+        self._name = name
+        self.kind = kind
         self._state = None
-        self._unit_of_measurement = SENSOR_TYPES[sensor_type][1]
-        self._icon = icon
+        self._unit_of_measurement = SENSOR_TYPES[self.kind][ATTR_UNIT_OF_MEASUREMENT]
 
-    def update(self):
-        """Get the latest data from Gismeteo and updates the states."""
-        self._wd.update()
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_LABEL]}"
 
-        if self._wd.current is None:
-            return
+    @property
+    def unique_id(self):
+        """Return a unique_id for this entity."""
+        return f"{self.coordinator.location_key}-{self.kind}".lower()
 
-        data = self._wd.current
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, self.coordinator.location_key)},
+            "name": NAME,
+            "entry_type": "service",
+        }
+
+    @property
+    def _gismeteo(self) -> Gismeteo:
+        return self.coordinator.gismeteo
+
+    @property
+    def state(self):
+        """Return the state."""
+        data = self._gismeteo.current
         try:
-            if self.type == "weather":
-                self._state = self._wd.condition()
-            elif self.type == "forecast":
-                self._state = self._wd.forecast()[0][ATTR_FORECAST_CONDITION]
-            elif self.type == "temperature":
-                self._state = self._wd.temperature()
-            elif self.type == "wind_speed":
-                self._state = self._wd.wind_speed_ms()
-            elif self.type == "wind_bearing":
-                self._state = self._wd.wind_bearing()
-            elif self.type == "humidity":
-                self._state = self._wd.humidity()
-            elif self.type == "pressure":
-                self._state = self._wd.pressure_hpa()
-            elif self.type == "clouds":
+            if self.kind == "weather":
+                self._state = self._gismeteo.condition()
+            elif self.kind == "forecast":
+                self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
+            elif self.kind == "temperature":
+                self._state = self._gismeteo.temperature()
+            elif self.kind == "wind_speed":
+                self._state = self._gismeteo.wind_speed_ms()
+            elif self.kind == "wind_bearing":
+                self._state = self._gismeteo.wind_bearing()
+            elif self.kind == "humidity":
+                self._state = self._gismeteo.humidity()
+            elif self.kind == "pressure":
+                self._state = self._gismeteo.pressure_hpa()
+            elif self.kind == "clouds":
                 self._state = int(data.get(ATTR_WEATHER_CLOUDINESS) * 33.33)
-            elif self.type == "rain":
+            elif self.kind == "rain":
                 if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [1, 3]:
                     self._state = (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
@@ -159,11 +213,13 @@ class GismeteoSensor(Entity):
                             data.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)
                         ]
                     )
-                    self._unit_of_measurement = SENSOR_TYPES["rain"][1]
+                    self._unit_of_measurement = SENSOR_TYPES[self.kind][
+                        ATTR_UNIT_OF_MEASUREMENT
+                    ]
                 else:
                     self._state = "not raining"
                     self._unit_of_measurement = ""
-            elif self.type == "snow":
+            elif self.kind == "snow":
                 if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [2, 3]:
                     self._state = (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
@@ -171,33 +227,20 @@ class GismeteoSensor(Entity):
                             data.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)
                         ]
                     )
-                    self._unit_of_measurement = SENSOR_TYPES["snow"][1]
+                    self._unit_of_measurement = SENSOR_TYPES[self.kind][
+                        ATTR_UNIT_OF_MEASUREMENT
+                    ]
                 else:
                     self._state = "not snowing"
                     self._unit_of_measurement = ""
-            elif self.type == "storm":
+            elif self.kind == "storm":
                 self._state = data.get(ATTR_WEATHER_STORM)
-            elif self.type == "geomagnetic":
+            elif self.kind == "geomagnetic":
                 self._state = data.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
-        except KeyError:
+        except KeyError:  # pragma: no cover
             self._state = None
-            _LOGGER.warning("Condition is currently not available: %s", self.type)
+            _LOGGER.warning("Condition is currently not available: %s", self.kind)
 
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
-        }
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"{self.client_name} {self._name}"
-
-    @property
-    def state(self):
-        """Return the state of the device."""
         return self._state
 
     @property
@@ -208,4 +251,16 @@ class GismeteoSensor(Entity):
     @property
     def icon(self):
         """Return the icon to use in the frontend, if any."""
-        return self._icon
+        return SENSOR_TYPES[self.kind][ATTR_ICON]
+
+    @property
+    def device_class(self):
+        """Return the device_class."""
+        return SENSOR_TYPES[self.kind][ATTR_DEVICE_CLASS]
+
+    @property
+    def device_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            ATTR_ATTRIBUTION: ATTRIBUTION,
+        }

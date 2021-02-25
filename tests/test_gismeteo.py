@@ -9,7 +9,7 @@ Tests for the Gismeteo component.
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
-from typing import Optional
+from typing import Any, Optional
 from unittest.mock import patch
 
 from aiohttp import ClientSession
@@ -37,6 +37,7 @@ from custom_components.gismeteo.gismeteo import (
 
 LATITUDE = 52.0677904
 LONGITUDE = 19.4795644
+LOCATION_KEY = 3546
 
 
 # pylint: disable=protected-access
@@ -100,17 +101,21 @@ async def test__async_get_data(mock_get):
 
 
 # pylint: disable=protected-access
-async def test__async_get_nearest_city_id():
+async def test_async_get_location():
     """Test with valid location data."""
     with patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        return_value=load_fixture("city_location.xml"),
+        return_value=load_fixture("location.xml"),
     ):
         async with ClientSession() as client:
             gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
-            city_id = await gismeteo._async_get_nearest_city_id()
 
-    assert city_id == 167413
+            assert gismeteo.location_key is None
+
+            await gismeteo.async_get_location()
+
+    assert gismeteo.location_key == 167413
+    assert gismeteo.location_name == "Razvilka"
 
     with patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
@@ -118,9 +123,8 @@ async def test__async_get_nearest_city_id():
     ):
         async with ClientSession() as client:
             gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
-            city_id = await gismeteo._async_get_nearest_city_id()
-
-    assert city_id is None
+            with raises(ApiError):
+                await gismeteo.async_get_location()
 
     with patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
@@ -128,9 +132,8 @@ async def test__async_get_nearest_city_id():
     ):
         async with ClientSession() as client:
             gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
-            city_id = await gismeteo._async_get_nearest_city_id()
-
-    assert city_id is None
+            with raises(ApiError):
+                await gismeteo.async_get_location()
 
 
 # pylint: disable=protected-access
@@ -147,24 +150,27 @@ def test__get_utime():
 
 # pylint: disable=protected-access
 async def init_gismeteo(
-    mode=FORECAST_MODE_HOURLY, city_id: Optional[int] = 6572, data=False
+    mode=FORECAST_MODE_HOURLY,
+    location_key: Optional[int] = LOCATION_KEY,
+    data: Any = False,
 ):
     """Prepare Gismeteo object."""
     with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_nearest_city_id",
-        return_value=city_id,
-    ), patch(
         "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        return_value=data if data is not False else load_fixture("forecast_data.xml"),
+        return_value=data if data is not False else load_fixture("forecast.xml"),
     ):
         async with ClientSession() as client:
             gismeteo = Gismeteo(
-                client, latitude=LATITUDE, longitude=LONGITUDE, mode=mode
+                client,
+                latitude=LATITUDE,
+                longitude=LONGITUDE,
+                location_key=location_key,
+                mode=mode,
             )
 
             assert gismeteo.current == {}
 
-            if city_id is None or data is not False:
+            if location_key is None or data is not False:
                 assert await gismeteo.async_update() is False
                 assert gismeteo.current == {}
             else:
@@ -182,9 +188,12 @@ async def test_async_update():
     assert gismeteo.current["humidity"] == 86
     assert gismeteo.current["phenomenon"] == 71
 
-    await init_gismeteo(city_id=None)
-    await init_gismeteo(data=None)
-    await init_gismeteo(data="qwe")
+    with raises(ApiError):
+        await init_gismeteo(location_key=None)
+    with raises(ApiError):
+        await init_gismeteo(data=None)
+    with raises(ApiError):
+        await init_gismeteo(data="qwe")
 
 
 async def test_condition():
