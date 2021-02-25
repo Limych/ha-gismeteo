@@ -81,7 +81,7 @@ I put a lot of work into making this repo and component available and updated to
 
 **mode:**\
   _(string) (Optional)_\
-  Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast, `daily` for daily forecast.\
+  Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast for 24h, `daily` for daily forecast for a week.\
   _Default value: `hourly`_
 
 **latitude:**\
