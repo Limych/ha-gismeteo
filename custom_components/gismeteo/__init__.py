@@ -11,17 +11,26 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import asyncio
+from asyncio import sleep
+import json
 import logging
+import os
 
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
-from homeassistant.const import CONF_MODE
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_PLATFORM
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import STORAGE_DIR
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    CONF_CACHE_DIR,
+    CONF_PLATFORMS,
+    CONF_YAML,
     COORDINATOR,
     FORECAST_MODE_HOURLY,
     UNDO_UPDATE_LISTENER,
@@ -33,51 +42,94 @@ _LOGGER = logging.getLogger(__name__)
 
 # Base component constants
 DOMAIN = "gismeteo"
-VERSION = "dev"
-ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 ATTRIBUTION = "Data provided by Gismeteo"
 
-PLATFORMS = ["sensor", "weather"]
+PLATFORMS = [SENSOR_DOMAIN, WEATHER_DOMAIN]
 
 
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up component."""
-    # Print startup message
-    _LOGGER.info("Version %s", VERSION)
+    # Print startup messages
+    with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json") as file:
+        manifest = json.load(file)
+    _LOGGER.info("%s v%s", manifest["name"], manifest["version"])
     _LOGGER.info(
-        "If you have ANY issues with this, please report them here: %s", ISSUE_URL
+        "If you have ANY issues with this component, please report them here: %s",
+        manifest["issue_tracker"],
     )
 
     hass.data.setdefault(DOMAIN, {})
+
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.source == "import":
+            await hass.config_entries.async_remove(entry.entry_id)
+
     return True
 
 
-async def async_setup_entry(hass, config_entry) -> bool:
-    """Set up AccuWeather as config entry."""
-    location_key = config_entry.unique_id
-    forecast = config_entry.options.get(CONF_MODE, FORECAST_MODE_HOURLY)
-
-    _LOGGER.debug("Using location_key: %s", location_key)
-
-    websession = async_get_clientsession(hass)
-
-    coordinator = GismeteoDataUpdateCoordinator(
-        hass, websession, location_key, forecast
+def get_gismeteo(hass: HomeAssistant, config):
+    """Prepare Gismeteo instance."""
+    return Gismeteo(
+        async_get_clientsession(hass),
+        latitude=config.get(CONF_LATITUDE, hass.config.latitude),
+        longitude=config.get(CONF_LONGITUDE, hass.config.longitude),
+        mode=config.get(CONF_MODE, FORECAST_MODE_HOURLY),
+        params={
+            "timezone": str(hass.config.time_zone),
+            "cache_dir": config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR)),
+            "cache_time": UPDATE_INTERVAL.total_seconds(),
+        },
     )
+
+
+async def _async_get_coordinator(hass: HomeAssistant, config: dict):
+    """Prepare update coordinator instance."""
+    gismeteo = get_gismeteo(hass, config)
+    await gismeteo.async_get_location()
+
+    coordinator = GismeteoDataUpdateCoordinator(hass, gismeteo)
     await coordinator.async_refresh()
 
     if not coordinator.last_update_success:
         raise ConfigEntryNotReady
 
-    undo_listener = config_entry.add_update_listener(update_listener)
+    return coordinator
 
-    hass.data[DOMAIN][config_entry.entry_id] = {
-        COORDINATOR: coordinator,
-        UNDO_UPDATE_LISTENER: undo_listener,
-    }
 
-    for component in PLATFORMS:
+async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
+    """Set up Gismeteo as config entry."""
+    if config_entry.source == "import":
+        # Setup from configuration.yaml
+        await sleep(12)
+
+        platforms = set()
+
+        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
+            platforms.add(cfg[CONF_PLATFORM])
+            coordinator = await _async_get_coordinator(hass, cfg)
+            hass.data[DOMAIN][uid] = {
+                COORDINATOR: coordinator,
+            }
+
+        undo_listener = config_entry.add_update_listener(update_listener)
+        hass.data[DOMAIN][config_entry.entry_id] = {
+            UNDO_UPDATE_LISTENER: undo_listener,
+        }
+        platforms = list(platforms)
+
+    else:
+        # Setup from config entry
+        platforms = config_entry.data.get(CONF_PLATFORMS, PLATFORMS)
+
+        coordinator = await _async_get_coordinator(hass, config_entry.data)
+        undo_listener = config_entry.add_update_listener(update_listener)
+        hass.data[DOMAIN][config_entry.entry_id] = {
+            COORDINATOR: coordinator,
+            UNDO_UPDATE_LISTENER: undo_listener,
+        }
+
+    for component in platforms:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(config_entry, component)
         )
@@ -87,11 +139,13 @@ async def async_setup_entry(hass, config_entry) -> bool:
 
 async def async_unload_entry(hass, config_entry):
     """Unload a config entry."""
+    platforms = config_entry.data.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
+
     unload_ok = all(
         await asyncio.gather(
             *[
                 hass.config_entries.async_forward_entry_unload(config_entry, component)
-                for component in PLATFORMS
+                for component in platforms
             ]
         )
     )
@@ -112,11 +166,9 @@ async def update_listener(hass, config_entry):
 class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Gismeteo data API."""
 
-    def __init__(self, hass, session, location_key, mode):
+    def __init__(self, hass: HomeAssistant, gismeteo: Gismeteo):
         """Initialize."""
-        self.location_key = location_key
-        self.is_metric = hass.config.units.is_metric
-        self.gismeteo = Gismeteo(session, location_key=self.location_key, mode=mode)
+        self.gismeteo = gismeteo
 
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
 

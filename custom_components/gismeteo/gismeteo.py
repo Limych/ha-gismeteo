@@ -123,7 +123,6 @@ class Gismeteo:
         self._session = session
         self._mode = mode
         self._cache = Cache(params) if params.get("cache_dir") is not None else None
-
         self._latitude = latitude
         self._longitude = longitude
         self._location_key = location_key
@@ -148,6 +147,11 @@ class Gismeteo:
         except (AssertionError, TypeError):
             return False
         return True
+
+    @property
+    def unique_id(self):
+        """Return a unique_id."""
+        return f"{self._location_key}-{self._mode}".lower()
 
     @property
     def current(self):
@@ -402,7 +406,7 @@ class Gismeteo:
                 ATTR_WEATHER_STORM: (self._get(current_v, "ts") == 1),
                 ATTR_WEATHER_GEOMAGNETIC_FIELD: self._get(current_v, "grade", int),
                 ATTR_WEATHER_PHENOMENON: self._get(current_v, "ph", int),
-                ATTR_WEATHER_WATER_TEMPERATURE: self._get(current_v, "water_t", int),
+                ATTR_WEATHER_WATER_TEMPERATURE: self._get(current_v, "water_t", float),
             }
 
             self._forecast = []

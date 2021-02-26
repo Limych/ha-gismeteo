@@ -61,7 +61,7 @@ class Cache:
             file_time = os.path.getmtime(file_path)
             now_time = time.time()
 
-            result = (file_time + self._cache_time) >= now_time
+            result = (file_time + self._cache_time) > now_time
 
         return result
 

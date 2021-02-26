@@ -11,7 +11,11 @@ https://github.com/Limych/ha-gismeteo/
 """
 import logging
 
-from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
+from homeassistant.components.weather import (
+    DOMAIN as WEATHER_DOMAIN,
+    PLATFORM_SCHEMA,
+    WeatherEntity,
+)
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_API_KEY,
@@ -19,6 +23,7 @@ from homeassistant.const import (
     CONF_LONGITUDE,
     CONF_MODE,
     CONF_NAME,
+    CONF_PLATFORM,
     TEMP_CELSIUS,
 )
 from homeassistant.helpers import config_validation as cv
@@ -28,6 +33,7 @@ import voluptuous as vol
 from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
 from .const import (
     CONF_CACHE_DIR,
+    CONF_YAML,
     COORDINATOR,
     DEFAULT_NAME,
     FORECAST_MODE_DAILY,
@@ -55,20 +61,41 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 # pylint: disable=unused-argument
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Gismeteo weather platform."""
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_IMPORT}, data=dict(config)
+    if CONF_YAML not in hass.data[DOMAIN]:
+        hass.data[DOMAIN].setdefault(CONF_YAML, {})
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data={}
+            )
         )
-    )
+
+    uid = WEATHER_DOMAIN + config[CONF_NAME]
+    config[CONF_PLATFORM] = WEATHER_DOMAIN
+    hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Add a Gismeteo weather entity from a config_entry."""
-    name = config_entry.data[CONF_NAME]
+    """Add a Gismeteo weather entities."""
+    entities = []
+    if config_entry.source == "import":
+        # Setup from configuration.yaml
+        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
+            if cfg[CONF_PLATFORM] != WEATHER_DOMAIN:
+                continue  # pragma: no cover
 
-    coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+            name = cfg[CONF_NAME]
+            coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-    async_add_entities([GismeteoWeather(name, coordinator)], False)
+            entities.append(GismeteoWeather(name, coordinator))
+
+    else:
+        # Setup from config entry
+        name = config_entry.data[CONF_NAME]
+        coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+
+        entities.append(GismeteoWeather(name, coordinator))
+
+    async_add_entities(entities, False)
 
 
 class GismeteoWeather(CoordinatorEntity, WeatherEntity):
@@ -80,6 +107,10 @@ class GismeteoWeather(CoordinatorEntity, WeatherEntity):
 
         self._name = name
         self._attrs = {}
+
+    @property
+    def _gismeteo(self) -> Gismeteo:
+        return self.coordinator.gismeteo
 
     @property
     def name(self):
@@ -94,20 +125,16 @@ class GismeteoWeather(CoordinatorEntity, WeatherEntity):
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return self.coordinator.location_key
+        return self._gismeteo.unique_id
 
     @property
     def device_info(self):
         """Return the device info."""
         return {
-            "identifiers": {(DOMAIN, self.coordinator.location_key)},
+            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
             "name": NAME,
             "entry_type": "service",
         }
-
-    @property
-    def _gismeteo(self) -> Gismeteo:
-        return self.coordinator.gismeteo
 
     @property
     def condition(self):

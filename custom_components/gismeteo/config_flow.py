@@ -10,25 +10,27 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 import asyncio
+import logging
 
 from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
 from homeassistant import config_entries
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_NAME
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.storage import STORAGE_DIR
 import voluptuous as vol
 
-from . import DOMAIN  # pylint: disable=unused-import
+from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
 from .const import (
-    CONF_CACHE_DIR,
     CONF_FORECAST,
+    CONF_PLATFORMS,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    UPDATE_INTERVAL,
 )
-from .gismeteo import ApiError, Gismeteo
+from .gismeteo import ApiError
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -38,8 +40,16 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     async def async_step_import(self, platform_config):
-        """Handle import."""
-        return await self.async_step_user(platform_config)
+        """Import a config entry.
+
+        Special type of import, we're not actually going to store any data.
+        Instead, we're going to rely on the values that are in config file.
+        """
+        for entry in self._async_current_entries():
+            if entry.source == "import":
+                return self.async_abort(reason="single_instance_allowed")
+
+        return self.async_create_entry(title="configuration.yaml", data=platform_config)
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
@@ -49,38 +59,40 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            websession = async_get_clientsession(self.hass)
-            cache_dir = user_input.get(
-                CONF_CACHE_DIR, self.hass.config.path(STORAGE_DIR)
-            )
+            platforms = user_input.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
+            user_input[CONF_PLATFORMS] = platforms
+
             try:
                 async with timeout(10):
-                    gismeteo = Gismeteo(
-                        websession,
-                        latitude=user_input.get(
-                            CONF_LATITUDE, self.hass.config.latitude
-                        ),
-                        longitude=user_input.get(
-                            CONF_LONGITUDE, self.hass.config.longitude
-                        ),
-                        mode=user_input.get(CONF_MODE, FORECAST_MODE_HOURLY),
-                        params={
-                            "timezone": str(self.hass.config.time_zone),
-                            "cache_dir": cache_dir,
-                            "cache_time": UPDATE_INTERVAL.total_seconds(),
-                        },
-                    )
+                    gismeteo = get_gismeteo(self.hass, user_input)
                     await gismeteo.async_update()
             except (ApiError, ClientConnectorError, asyncio.TimeoutError, ClientError):
                 errors["base"] = "cannot_connect"
             else:
-                await self.async_set_unique_id(
-                    gismeteo.location_key, raise_on_progress=False
+                entry = await self.async_set_unique_id(
+                    gismeteo.unique_id, raise_on_progress=False
                 )
+                if entry is None:
+                    _LOGGER.debug(
+                        "Register new config entry with ID %s",
+                        self.context["unique_id"],  # pylint: disable=no-member
+                    )
+                    return self.async_create_entry(
+                        title=user_input[CONF_NAME], data=user_input
+                    )
 
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=user_input
-                )
+                _LOGGER.debug("Update config entry with ID %s", entry.unique_id)
+                platforms = list(set(platforms).union(entry.data[CONF_PLATFORMS]))
+                user_input.update(entry.data)
+                user_input[CONF_PLATFORMS] = platforms
+
+                self.hass.config_entries.async_update_entry(entry, data=user_input)
+                #
+                # self.hass.async_create_task(
+                #     self.hass.config_entries.async_reload(entry.entry_id)
+                # )
+
+                return self.async_abort(reason="already_configured")
 
         return self.async_show_form(
             step_id="user",

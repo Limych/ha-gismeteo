@@ -9,7 +9,7 @@ from pytest_homeassistant_custom_component.common import (
     load_fixture,
 )
 
-from custom_components.gismeteo import DOMAIN, UPDATE_INTERVAL
+from custom_components.gismeteo import DOMAIN, UPDATE_INTERVAL, Gismeteo
 
 
 def get_mock_config_entry(forecast=False) -> MockConfigEntry:
@@ -35,10 +35,14 @@ async def init_integration(hass, forecast=False) -> MockConfigEntry:
     """Set up the Gismeteo integration in Home Assistant."""
     entry = get_mock_config_entry(forecast)
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        return_value=load_fixture("forecast.xml"),
-    ):
+    location_data = load_fixture("location.xml")
+    forecast_data = load_fixture("forecast.xml")
+
+    # pylint: disable=unused-argument
+    def mock_data(*args, **kwargs):
+        return location_data if args[0].find("/cities/") >= 0 else forecast_data
+
+    with patch.object(Gismeteo, "_async_get_data", side_effect=mock_data):
         entry.add_to_hass(hass)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -54,10 +58,7 @@ async def test_update_interval(hass):
 
     future = utcnow() + UPDATE_INTERVAL
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo.async_update",
-    ) as mock_current:
-
+    with patch.object(Gismeteo, "async_update") as mock_current:
         assert mock_current.call_count == 0
 
         async_fire_time_changed(hass, future)

@@ -38,7 +38,8 @@ MS2KMH = 3.6
 
 CONF_CACHE_DIR = "cache_dir"
 CONF_FORECAST = "forecast"
-CONF_LANGUAGE = "language"
+CONF_PLATFORMS = "platforms"
+CONF_YAML = "_yaml"
 
 FORECAST_MODE_HOURLY = "hourly"
 FORECAST_MODE_DAILY = "daily"
@@ -138,7 +139,7 @@ SENSOR_TYPES = {
     },
     "clouds": {
         ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-partlycloudy",
+        ATTR_ICON: "mdi:weather-partly-cloudy",
         ATTR_LABEL: "Cloud coverage",
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
     },

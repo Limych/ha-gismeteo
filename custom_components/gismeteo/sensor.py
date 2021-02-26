@@ -11,7 +11,8 @@ https://github.com/Limych/ha-gismeteo/
 """
 import logging
 
-from homeassistant.components.weather import ATTR_FORECAST_CONDITION, PLATFORM_SCHEMA
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, PLATFORM_SCHEMA
+from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     ATTR_ATTRIBUTION,
@@ -21,7 +22,9 @@ from homeassistant.const import (
     CONF_API_KEY,
     CONF_MONITORED_CONDITIONS,
     CONF_NAME,
+    CONF_PLATFORM,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import voluptuous as vol
@@ -37,7 +40,7 @@ from .const import (
     ATTR_WEATHER_STORM,
     CONF_CACHE_DIR,
     CONF_FORECAST,
-    CONF_LANGUAGE,
+    CONF_YAML,
     COORDINATOR,
     DEFAULT_NAME,
     FORECAST_SENSOR_TYPE,
@@ -58,36 +61,62 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         ),
         vol.Optional(CONF_FORECAST, default=False): cv.boolean,
         vol.Optional(CONF_CACHE_DIR): cv.string,
-        vol.Optional(CONF_LANGUAGE): cv.string,
     }
 )
 
 
 # pylint: disable=unused-argument
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(
+    hass: HomeAssistant, config, add_entities, discovery_info=None
+):
     """Set up the Gismeteo sensor platform."""
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_IMPORT}, data=dict(config)
+    if CONF_YAML not in hass.data[DOMAIN]:
+        hass.data[DOMAIN].setdefault(CONF_YAML, {})
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data={}
+            )
         )
-    )
+
+    uid = SENSOR_DOMAIN + config[CONF_NAME]
+    config[CONF_PLATFORM] = SENSOR_DOMAIN
+    hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Add Gismeteo entities from a config_entry."""
-    name = config_entry.data[CONF_NAME]
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+    """Add Gismeteo sensor entities."""
+    entities = []
+    if config_entry.source == "import":
+        # Setup from configuration.yaml
+        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
+            if cfg[CONF_PLATFORM] != SENSOR_DOMAIN:
+                continue  # pragma: no cover
 
-    coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+            name = cfg[CONF_NAME]
+            coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-    sensors = []
-    for kind in config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
-        sensors.append(GismeteoSensor(name, kind, coordinator))
+            for kind in cfg.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
+                entities.append(GismeteoSensor(name, kind, coordinator))
 
-    if config_entry.data.get(CONF_FORECAST, True):
-        SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-        sensors.append(GismeteoSensor(name, "forecast", coordinator))
+            if cfg.get(CONF_FORECAST, True):
+                SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
+                entities.append(GismeteoSensor(name, "forecast", coordinator))
 
-    async_add_entities(sensors, False)
+    else:
+        # Setup from config entry
+        name = config_entry.data[CONF_NAME]
+        coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
+
+        for kind in config_entry.data.get(
+            CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()
+        ):
+            entities.append(GismeteoSensor(name, kind, coordinator))
+
+        if config_entry.data.get(CONF_FORECAST, True):
+            SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
+            entities.append(GismeteoSensor(name, "forecast", coordinator))
+
+    async_add_entities(entities, False)
 
 
 class GismeteoSensor(CoordinatorEntity):
@@ -108,6 +137,10 @@ class GismeteoSensor(CoordinatorEntity):
         self._unit_of_measurement = SENSOR_TYPES[self.kind][ATTR_UNIT_OF_MEASUREMENT]
 
     @property
+    def _gismeteo(self) -> Gismeteo:
+        return self.coordinator.gismeteo
+
+    @property
     def name(self):
         """Return the name of the sensor."""
         return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_LABEL]}"
@@ -115,20 +148,16 @@ class GismeteoSensor(CoordinatorEntity):
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return f"{self.coordinator.location_key}-{self.kind}".lower()
+        return f"{self._gismeteo.unique_id}-{self.kind}".lower()
 
     @property
     def device_info(self):
         """Return the device info."""
         return {
-            "identifiers": {(DOMAIN, self.coordinator.location_key)},
+            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
             "name": NAME,
             "entry_type": "service",
         }
-
-    @property
-    def _gismeteo(self) -> Gismeteo:
-        return self.coordinator.gismeteo
 
     @property
     def state(self):
@@ -183,6 +212,8 @@ class GismeteoSensor(CoordinatorEntity):
                 self._state = data.get(ATTR_WEATHER_STORM)
             elif self.kind == "geomagnetic":
                 self._state = data.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
+            elif self.kind == "water_temperature":
+                self._state = self._gismeteo.water_temperature()
         except KeyError:  # pragma: no cover
             self._state = None
             _LOGGER.warning("Condition is currently not available: %s", self.kind)

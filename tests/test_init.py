@@ -1,5 +1,6 @@
 """Tests for GisMeteo integration."""
-from asynctest import patch
+from unittest.mock import patch
+
 from homeassistant.config_entries import (
     ENTRY_STATE_LOADED,
     ENTRY_STATE_NOT_LOADED,
@@ -7,8 +8,9 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.gismeteo import DOMAIN, ApiError
+from custom_components.gismeteo import DOMAIN, ApiError, Gismeteo
 
 from . import get_mock_config_entry, init_integration
 
@@ -36,13 +38,18 @@ async def test_async_setup_entry(hass):
 
 
 async def test_config_not_ready(hass):
-    """Test for setup failure if connection to AccuWeather is missing."""
+    """Test for setup failure if connection to Gismeteo is missing."""
     entry = get_mock_config_entry()
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
-        side_effect=ApiError("API Error"),
-    ):
+    location_data = load_fixture("location.xml")
+
+    # pylint: disable=unused-argument
+    def mock_data(*args, **kwargs):
+        if args[0].find("/cities/") >= 0:
+            return location_data
+        raise ApiError
+
+    with patch.object(Gismeteo, "_async_get_data", side_effect=mock_data):
         entry.add_to_hass(hass)
         await hass.config_entries.async_setup(entry.entry_id)
 
