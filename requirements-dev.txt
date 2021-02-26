@@ -1,6 +1,5 @@
 -r requirements-test.txt
 black==20.08b1
-mypy==0.790
 packaging==20.9
 pre-commit==2.8.2
 PyGithub==1.54.1

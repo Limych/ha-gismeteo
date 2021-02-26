@@ -46,6 +46,7 @@ jobs:
             echo '"""Stub."""' >custom_components/__init__.py
           fi
 
-      - name: "Lint with flake8"
+      - name: "Lint with flake8 & mypy"
         run: |
           flake8 ${{ env.package }} tests
+          mypy --warn-unreachable ${{ env.package }} tests
