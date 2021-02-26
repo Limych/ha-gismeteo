@@ -5,6 +5,8 @@
 [![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-gismeteo?label=release&style=popout)](https://github.com/Limych/ha-gismeteo/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout)](https://github.com/Limych/ha-gismeteo/commits/master)
 [![License](https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout)](LICENSE.md)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Limych/ha-gismeteo/Python%20testing)
+[![Coverage Status](https://img.shields.io/coveralls/github/Limych/ha-gismeteo?style=popout)](https://coveralls.io/github/Limych/ha-gismeteo)
 ![Requires.io](https://img.shields.io/requires/github/Limych/ha-gismeteo)
 
 [![hacs](https://img.shields.io/badge/HACS-Default-orange.svg?style=popout)][hacs]
@@ -25,12 +27,24 @@ I also suggest you [visit the support topic][forum-support] on the community for
 
 ## Installation
 
+**Note:** If you configure the integration through the Home Assistant GUI, the weather provider and sensors will be created at the same time. But you're limited to only one set of settings. When configuring via `configuration.yaml` file, you can create multiple weather providers.
+
+### Install from HACS (recommended)
+
+1. Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
+1. Search for "Gismeteo Weather Provider".
+1. Click Install below the found integration.
+1. Configure integration via Home Assistant GUI or via your `configuration.yaml` file using the configuration instructions below.
+1. Restart Home Assistant
+
+### Manual installation
+
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
 1. If you do not have a `custom_components` directory (folder) there, you need to create it.
 1. In the `custom_components` directory (folder) create a new folder called `gismeteo`.
-1. Download _all_\
-  the files from the `custom_components/gismeteo/` directory (folder) in this repository.
-1. Place the files you downloaded in the new directory (folder) you created.
+1. Download file `gismeteo.zip` from the [latest release section][latest-release] in this repository.
+1. Extract _all_ files from this archive you downloaded in the directory (folder) `gismeteo` you created.
+1. Configure integration via Home Assistant GUI or via your `configuration.yaml` file using the configuration instructions below.
 1. Restart Home Assistant
 
 ### Weather Provider Configuration
@@ -67,7 +81,7 @@ I put a lot of work into making this repo and component available and updated to
 
 **mode:**\
   _(string) (Optional)_\
-  Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast, `daily` for daily forecast.\
+  Can specify `hourly` or `daily`. Select `hourly` for a three-hour forecast for 24h, `daily` for daily forecast for a week.\
   _Default value: `hourly`_
 
 **latitude:**\
@@ -163,10 +177,44 @@ I put a lot of work into making this repo and component available and updated to
 >   6 = Severe geomagnetic storm\
 >   7 = Hard geomagnetic storm\
 >   8 = Extreme geomagnetic storm
+>
+> **water_temperature**\
+>   The current temperature of water.
 
 ## Track updates
 
 You can automatically track new versions of this component and update it by [HACS][hacs].
 
+## Troubleshooting
+
+To enable debug logs use this configuration:
+```yaml
+# Example configuration.yaml entry
+logger:
+  logs:
+    custom_components.gismeteo: debug
+```
+... then restart HA.
+
+## Contributions are welcome!
+
+If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+
+## Authors & contributors
+
+The original setup of this component is by [Andrey "Limych" Khrolenok][limych].
+
+For a full list of all authors and contributors,
+check [the contributor's page][contributors].
+
+## License
+
+creative commons Attribution-NonCommercial-ShareAlike 4.0 International License
+
+See separate [license file](LICENSE.md) for full text.
+
 [forum-support]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
 [hacs]: https://github.com/custom-components/hacs
+[latest-release]: https://github.com/Limych/ha-gismeteo/releases/latest
+[limych]: https://github.com/Limych
+[contributors]: https://github.com/Limych/ha-jq300/graphs/contributors

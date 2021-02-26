@@ -1,0 +1,39 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Настройка уже выполнена. Возможно добавить только одну конфигурацию."
+        },
+        "error": {
+            "cannot_connect": "Не удалось подключиться."
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "api_key": "Ключ API",
+                    "latitude": "Широта",
+                    "longitude": "Долгота",
+                    "name": "Название",
+                    "mode": "Режим прогноза"
+                },
+                "description": "Ознакомьтесь с инструкциями, если Вам нужна помощь с настройкой:\nhttps://github.com/Limych/ha-gismeteo",
+                "title": "Gismeteo"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "user": {
+                "data": {
+                    "forecast": "Прогноз погоды"
+                },
+                "description": "В связи с ограничениями бесплатной версии ключа API Gismeteo, при включении прогноза погоды обновление данных будет происходить каждые 80 минут, а не каждые 40 минут.",
+                "title": "Настройки Gismeteo"
+            }
+        }
+    },
+    "system_health": {
+        "info": {
+            "can_reach_server": "Доступ к серверу Gismeteo"
+        }
+    }
+}

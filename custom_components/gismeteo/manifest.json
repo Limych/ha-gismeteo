@@ -1,10 +1,15 @@
 {
+    "version": "2.0.26+dev",
     "codeowners": [
         "@limych"
     ],
-    "dependencies": [],
-    "documentation": "https://github.com/Limych/HomeAssistantComponents/tree/master/custom_components/gismeteo",
+    "dependencies": [
+        "weather"
+    ],
+    "documentation": "https://github.com/Limych/ha-gismeteo",
+    "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
     "domain": "gismeteo",
     "name": "Gismeteo",
-    "requirements": []
+    "requirements": [],
+    "config_flow": true
 }

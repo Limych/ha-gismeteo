@@ -8,5 +8,8 @@ ROOT="$( cd "$( dirname "$(readlink -f "$0")" )/.." >/dev/null 2>&1 && pwd )"
 
 cd "${ROOT}"
 
+echo "Updating PIP..."
+/usr/bin/python3 -m pip install --upgrade pip
+
 echo "Installing development dependencies..."
-python3 -m pip install tox colorlog pre-commit $(grep mypy requirements-dev.txt)
+pip3 install colorlog pre-commit $(grep mypy requirements-dev.txt)

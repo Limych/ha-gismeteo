@@ -14,32 +14,39 @@ from datetime import timedelta
 
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.const import (
-    TEMP_CELSIUS,
-    SPEED_METERS_PER_SECOND,
+    ATTR_DEVICE_CLASS,
+    ATTR_ICON,
+    ATTR_UNIT_OF_MEASUREMENT,
     DEGREE,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_TEMPERATURE,
     PRESSURE_HPA,
+    SPEED_METERS_PER_SECOND,
+    TEMP_CELSIUS,
 )
 
 try:
     from homeassistant.const import PERCENTAGE
-except ImportError:
+except ImportError:  # pragma: no cover
     from homeassistant.const import UNIT_PERCENTAGE as PERCENTAGE
 
-BASE_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
+ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
 
 MMHG2HPA = 1.333223684
 MS2KMH = 3.6
 
 CONF_CACHE_DIR = "cache_dir"
 CONF_FORECAST = "forecast"
-CONF_LANGUAGE = "language"
+CONF_PLATFORMS = "platforms"
+CONF_YAML = "_yaml"
 
 FORECAST_MODE_HOURLY = "hourly"
 FORECAST_MODE_DAILY = "daily"
 
 DEFAULT_NAME = "Gismeteo"
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=5)
+UPDATE_INTERVAL = timedelta(minutes=5)
 
 CONDITION_FOG_CLASSES = [
     11,
@@ -67,6 +74,7 @@ CONDITION_FOG_CLASSES = [
 
 ATTR_SUNRISE = "sunrise"
 ATTR_SUNSET = "sunset"
+ATTR_LABEL = "label"
 
 ATTR_WEATHER_CONDITION = ATTR_FORECAST_CONDITION
 ATTR_WEATHER_CLOUDINESS = "cloudiness"
@@ -76,6 +84,7 @@ ATTR_WEATHER_PRECIPITATION_INTENSITY = "precipitation_intensity"
 ATTR_WEATHER_STORM = "storm"
 ATTR_WEATHER_GEOMAGNETIC_FIELD = "gm_field"
 ATTR_WEATHER_PHENOMENON = "phenomenon"
+ATTR_WEATHER_WATER_TEMPERATURE = "water_temperature"
 
 ATTR_FORECAST_HUMIDITY = "humidity"
 ATTR_FORECAST_PRESSURE = "pressure"
@@ -92,16 +101,89 @@ PRECIPITATION_AMOUNT = (0, 2, 6, 16)
 LENGTH_MILLIMETERS: str = "mm"
 
 SENSOR_TYPES = {
-    "weather": ["Condition", None, None],
-    "temperature": ["Temperature", TEMP_CELSIUS, "mdi:thermometer"],
-    "wind_speed": ["Wind speed", SPEED_METERS_PER_SECOND, "mdi:weather-windy"],
-    "wind_bearing": ["Wind bearing", DEGREE, "mdi:weather-windy"],
-    "humidity": ["Humidity", PERCENTAGE, "mdi:water-percent"],
-    "pressure": ["Pressure", PRESSURE_HPA, "mdi:gauge"],
-    "clouds": ["Cloud coverage", PERCENTAGE, "mdi:weather-partly-cloudy"],
-    "rain": ["Rain", LENGTH_MILLIMETERS, "mdi:weather-rainy"],
-    "snow": ["Snow", LENGTH_MILLIMETERS, "mdi:weather-snowy"],
-    "storm": ["Storm", None, "mdi:weather-lightning"],
-    "geomagnetic": ["Geomagnetic field", "", "mdi:magnet-on"],
+    "weather": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Condition",
+        ATTR_UNIT_OF_MEASUREMENT: None,
+    },
+    "temperature": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Temperature",
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+    },
+    "wind_speed": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-windy",
+        ATTR_LABEL: "Wind speed",
+        ATTR_UNIT_OF_MEASUREMENT: SPEED_METERS_PER_SECOND,
+    },
+    "wind_bearing": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-windy",
+        ATTR_LABEL: "Wind bearing",
+        ATTR_UNIT_OF_MEASUREMENT: DEGREE,
+    },
+    "humidity": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Humidity",
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
+    },
+    "pressure": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Pressure",
+        ATTR_UNIT_OF_MEASUREMENT: PRESSURE_HPA,
+    },
+    "clouds": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-partly-cloudy",
+        ATTR_LABEL: "Cloud coverage",
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
+    },
+    "rain": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-rainy",
+        ATTR_LABEL: "Rain",
+        ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
+    },
+    "snow": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-snowy",
+        ATTR_LABEL: "Snow",
+        ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
+    },
+    "storm": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-lightning",
+        ATTR_LABEL: "Storm",
+        ATTR_UNIT_OF_MEASUREMENT: None,
+    },
+    "geomagnetic": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:magnet-on",
+        ATTR_LABEL: "Geomagnetic field",
+        ATTR_UNIT_OF_MEASUREMENT: "",
+    },
+    "water_temperature": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_ICON: None,
+        ATTR_LABEL: "Water Temperature",
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+    },
 }
-FORECAST_SENSOR_TYPE = ["Forecast", None, None]
+FORECAST_SENSOR_TYPE = {
+    ATTR_DEVICE_CLASS: None,
+    ATTR_ICON: None,
+    ATTR_LABEL: "Forecast",
+    ATTR_UNIT_OF_MEASUREMENT: None,
+}
+
+HTTP_HEADERS: dict = {"Content-Encoding": "gzip"}
+HTTP_OK: int = 200
+
+COORDINATOR = "coordinator"
+UNDO_UPDATE_LISTENER = "undo_update_listener"
+NAME = "Gismeteo"

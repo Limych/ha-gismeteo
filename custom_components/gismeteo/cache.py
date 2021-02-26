@@ -1,5 +1,5 @@
 #  Copyright (c) 2018, Vladimir Maksimenko <vl.maksime@gmail.com>
-#  Copyright (c) 2019, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #
 # Version 3.0
 """Cache controller."""
@@ -43,7 +43,7 @@ class Cache:
                     file_time = os.path.getmtime(file_path)
                     if (file_time + self._cache_time) <= now_time:
                         os.remove(file_path)
-                except FileNotFoundError:
+                except FileNotFoundError:  # pragma: no cover
                     pass
 
     def _get_file_path(self, file_name):
@@ -61,7 +61,7 @@ class Cache:
             file_time = os.path.getmtime(file_path)
             now_time = time.time()
 
-            result = (file_time + self._cache_time) >= now_time
+            result = (file_time + self._cache_time) > now_time
 
         return result
 
@@ -70,9 +70,8 @@ class Cache:
         file_path = self._get_file_path(file_name)
         _LOGGER.debug("Read cache file %s", file_path)
         if self.is_cached(file_name):
-            file = open(file_path)
-            content = file.read()
-            file.close()
+            with open(file_path) as file:
+                content = file.read()
         else:
             content = None
 
@@ -87,6 +86,4 @@ class Cache:
             file_path = self._get_file_path(file_name)
             _LOGGER.debug("Store cache file %s", file_path)
 
-            file = open(file_path, "w")
-            file.write(content.decode("utf-8"))
-            file.close()
+            open(file_path, "w").write(content)
