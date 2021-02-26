@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.CRITICAL)
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = "1.1.4"
+VERSION = "1.1.5"
 
 ROOT = os.path.dirname(os.path.abspath(f"{__file__}/.."))
 
@@ -93,10 +93,11 @@ def gen_changes(repo: Repository, tag: str = None) -> str:
         if "\n" in msg:
             msg = msg.split("\n")[0]
         if (
-            "Bump version " in msg
-            or "Merge branch " in msg
-            or "Merge tag " in msg
-            or "Merge pull request " in msg
+            "Bump version" in msg
+            or "Merge branch" in msg
+            or "Merge tag" in msg
+            or "Merge pull request" in msg
+            or "Fix errors" in msg
         ):
             continue
         changes += CHANGE.format(
@@ -120,7 +121,7 @@ def _bump_release(release, bump_type):
 
 
 def bump_version(version: Version) -> Version:
-    """Return a new version given a current version and action."""
+    """Return a new version given a current version."""
     to_change = {}
 
     # Convert 0.67.3 to 0.67.4
