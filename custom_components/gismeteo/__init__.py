@@ -11,7 +11,6 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import asyncio
-from asyncio import sleep
 import json
 import logging
 import os
@@ -101,7 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     """Set up Gismeteo as config entry."""
     if config_entry.source == "import":
         # Setup from configuration.yaml
-        await sleep(12)
+        await asyncio.sleep(12)
 
         platforms = set()
 
