@@ -69,30 +69,13 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             except (ApiError, ClientConnectorError, asyncio.TimeoutError, ClientError):
                 errors["base"] = "cannot_connect"
             else:
-                entry = await self.async_set_unique_id(
+                await self.async_set_unique_id(
                     gismeteo.unique_id, raise_on_progress=False
                 )
-                if entry is None:
-                    _LOGGER.debug(
-                        "Register new config entry with ID %s",
-                        self.context["unique_id"],  # pylint: disable=no-member
-                    )
-                    return self.async_create_entry(
-                        title=user_input[CONF_NAME], data=user_input
-                    )
 
-                _LOGGER.debug("Update config entry with ID %s", entry.unique_id)
-                platforms = list(set(platforms).union(entry.data[CONF_PLATFORMS]))
-                user_input.update(entry.data)
-                user_input[CONF_PLATFORMS] = platforms
-
-                self.hass.config_entries.async_update_entry(entry, data=user_input)
-                #
-                # self.hass.async_create_task(
-                #     self.hass.config_entries.async_reload(entry.entry_id)
-                # )
-
-                return self.async_abort(reason="already_configured")
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME], data=user_input
+                )
 
         return self.async_show_form(
             step_id="user",
