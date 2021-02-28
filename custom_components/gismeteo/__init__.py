@@ -176,8 +176,6 @@ class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             async with timeout(10):
                 await self.gismeteo.async_update()
-                current = self.gismeteo.current
+            return self.gismeteo.current
         except (ApiError, ClientConnectorError) as error:
             raise UpdateFailed(error) from error
-
-        return current

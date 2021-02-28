@@ -45,9 +45,8 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         Special type of import, we're not actually going to store any data.
         Instead, we're going to rely on the values that are in config file.
         """
-        for entry in self._async_current_entries():
-            if entry.source == "import":
-                return self.async_abort(reason="single_instance_allowed")
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
         return self.async_create_entry(title="configuration.yaml", data=platform_config)
 

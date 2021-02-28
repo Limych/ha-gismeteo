@@ -16,11 +16,13 @@ from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
+    ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     DEGREE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
+    LENGTH_MILLIMETERS,
     PRESSURE_HPA,
     SPEED_METERS_PER_SECOND,
     TEMP_CELSIUS,
@@ -74,7 +76,6 @@ CONDITION_FOG_CLASSES = [
 
 ATTR_SUNRISE = "sunrise"
 ATTR_SUNSET = "sunset"
-ATTR_LABEL = "label"
 
 ATTR_WEATHER_CONDITION = ATTR_FORECAST_CONDITION
 ATTR_WEATHER_CLOUDINESS = "cloudiness"
@@ -98,86 +99,84 @@ ATTR_FORECAST_PHENOMENON = ATTR_WEATHER_PHENOMENON
 
 PRECIPITATION_AMOUNT = (0, 2, 6, 16)
 
-LENGTH_MILLIMETERS: str = "mm"
-
 SENSOR_TYPES = {
     "weather": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: None,
-        ATTR_LABEL: "Condition",
+        ATTR_NAME: "Condition",
         ATTR_UNIT_OF_MEASUREMENT: None,
     },
     "temperature": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_ICON: None,
-        ATTR_LABEL: "Temperature",
+        ATTR_NAME: "Temperature",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
     "wind_speed": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-windy",
-        ATTR_LABEL: "Wind speed",
+        ATTR_NAME: "Wind speed",
         ATTR_UNIT_OF_MEASUREMENT: SPEED_METERS_PER_SECOND,
     },
     "wind_bearing": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-windy",
-        ATTR_LABEL: "Wind bearing",
+        ATTR_NAME: "Wind bearing",
         ATTR_UNIT_OF_MEASUREMENT: DEGREE,
     },
     "humidity": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
         ATTR_ICON: None,
-        ATTR_LABEL: "Humidity",
+        ATTR_NAME: "Humidity",
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
     },
     "pressure": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
         ATTR_ICON: None,
-        ATTR_LABEL: "Pressure",
+        ATTR_NAME: "Pressure",
         ATTR_UNIT_OF_MEASUREMENT: PRESSURE_HPA,
     },
     "clouds": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-partly-cloudy",
-        ATTR_LABEL: "Cloud coverage",
+        ATTR_NAME: "Cloud coverage",
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
     },
     "rain": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-rainy",
-        ATTR_LABEL: "Rain",
+        ATTR_NAME: "Rain",
         ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
     },
     "snow": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-snowy",
-        ATTR_LABEL: "Snow",
+        ATTR_NAME: "Snow",
         ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
     },
     "storm": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-lightning",
-        ATTR_LABEL: "Storm",
+        ATTR_NAME: "Storm",
         ATTR_UNIT_OF_MEASUREMENT: None,
     },
     "geomagnetic": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:magnet-on",
-        ATTR_LABEL: "Geomagnetic field",
+        ATTR_NAME: "Geomagnetic field",
         ATTR_UNIT_OF_MEASUREMENT: "",
     },
     "water_temperature": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_ICON: None,
-        ATTR_LABEL: "Water Temperature",
+        ATTR_NAME: "Water Temperature",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
 }
 FORECAST_SENSOR_TYPE = {
     ATTR_DEVICE_CLASS: None,
     ATTR_ICON: None,
-    ATTR_LABEL: "Forecast",
+    ATTR_NAME: "Forecast",
     ATTR_UNIT_OF_MEASUREMENT: None,
 }
 

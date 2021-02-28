@@ -18,6 +18,7 @@ from homeassistant.const import (
     ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
+    ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     CONF_API_KEY,
     CONF_MONITORED_CONDITIONS,
@@ -31,7 +32,6 @@ import voluptuous as vol
 
 from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
 from .const import (
-    ATTR_LABEL,
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
     ATTR_WEATHER_PRECIPITATION_AMOUNT,
@@ -143,7 +143,7 @@ class GismeteoSensor(CoordinatorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_LABEL]}"
+        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_NAME]}"
 
     @property
     def unique_id(self):
