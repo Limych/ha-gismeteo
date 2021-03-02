@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@master
 
       - run: |
-          echo "package=`ls -F | grep \/$ | grep -v "bin\|examples\|tests" | sed -n "s/\///g;1p"`" >> $GITHUB_ENV
+          echo "package=$(ls -F | grep \/$ | grep -v "bin\|examples\|tests" | sed -n "s/\///g;1p")" >> $GITHUB_ENV
 
       - name: "Set up Python"
         uses: actions/setup-python@v2
@@ -20,7 +20,7 @@ jobs:
           python-version: '3.8'
 
       - name: "Cache pip"
-        uses: actions/cache@v2
+        uses: actions/cache@v2.1.4
         with:
           # This path is specific to Ubuntu
           path: ~/.cache/pip
