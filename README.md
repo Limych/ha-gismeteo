@@ -142,19 +142,19 @@ I put a lot of work into making this repo and component available and updated to
 >   A human-readable text summary.
 >
 > **temperature**\
->   The current temperature.
+>   The current temperature of air.
+>
+> **humidity**\
+>   The relative humidity of air.
+>
+> **pressure**\
+>   The sea-level air pressure in millibars.
 >
 > **wind_speed**\
 >   The wind speed.
 >
 > **wind_bearing**\
 >   The wind bearing.
->
-> **humidity**\
->   The relative humidity.
->
-> **pressure**\
->   The sea-level air pressure in millibars.
 >
 > **clouds**\
 >   Description about cloud coverage.
