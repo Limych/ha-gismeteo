@@ -7,10 +7,12 @@ from homeassistant.config_entries import (
     ENTRY_STATE_SETUP_RETRY,
 )
 from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.gismeteo import DOMAIN, ApiError, GismeteoApiClient
+from custom_components.gismeteo.api import ApiError, GismeteoApiClient
+from custom_components.gismeteo.const import DOMAIN
 
 from . import get_mock_config_entry, init_integration
 
@@ -29,7 +31,7 @@ async def test_async_setup(hass: HomeAssistant):
 
 async def test_async_setup_entry(hass: HomeAssistant):
     """Test a successful setup entry."""
-    await init_integration(hass: HomeAssistant)
+    await init_integration(hass)
 
     state = hass.states.get("weather.home")
     assert state is not None
@@ -50,7 +52,7 @@ async def test_config_not_ready(hass: HomeAssistant):
         raise ApiError
 
     with patch.object(GismeteoApiClient, "_async_get_data", side_effect=mock_data):
-        entry.add_to_hass(hass: HomeAssistant)
+        entry.add_to_hass(hass)
         await hass.config_entries.async_setup(entry.entry_id)
 
         assert entry.state == ENTRY_STATE_SETUP_RETRY
@@ -58,7 +60,7 @@ async def test_config_not_ready(hass: HomeAssistant):
 
 async def test_unload_entry(hass: HomeAssistant):
     """Test successful unload of entry."""
-    entry = await init_integration(hass: HomeAssistant)
+    entry = await init_integration(hass)
 
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
     assert entry.state == ENTRY_STATE_LOADED

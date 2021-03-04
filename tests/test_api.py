@@ -19,6 +19,11 @@ from homeassistant.const import HTTP_OK
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
+from custom_components.gismeteo.api import (
+    ApiError,
+    GismeteoApiClient,
+    InvalidCoordinatesError,
+)
 from custom_components.gismeteo.const import (
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_PHENOMENON,
@@ -28,11 +33,6 @@ from custom_components.gismeteo.const import (
     CONDITION_FOG_CLASSES,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-)
-from custom_components.gismeteo.api import (
-    ApiError,
-    GismeteoApiClient,
-    InvalidCoordinatesError,
 )
 
 LATITUDE = 52.0677904
@@ -103,8 +103,9 @@ async def test__async_get_data(mock_get):
 # pylint: disable=protected-access
 async def test_async_get_location():
     """Test with valid location data."""
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=load_fixture("location.xml"),
     ):
         async with ClientSession() as client:
@@ -117,8 +118,9 @@ async def test_async_get_location():
     assert gismeteo.location_key == 167413
     assert gismeteo.location_name == "Razvilka"
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=None,
     ):
         async with ClientSession() as client:
@@ -126,8 +128,9 @@ async def test_async_get_location():
             with raises(ApiError):
                 await gismeteo.async_get_location()
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value="qwe",
     ):
         async with ClientSession() as client:
@@ -155,8 +158,9 @@ async def init_gismeteo(
     data: Any = False,
 ):
     """Prepare Gismeteo object."""
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=data if data is not False else load_fixture("forecast.xml"),
     ):
         async with ClientSession() as client:
