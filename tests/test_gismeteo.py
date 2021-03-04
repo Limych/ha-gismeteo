@@ -15,6 +15,7 @@ from unittest.mock import patch
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
+from homeassistant.const import HTTP_OK
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -27,7 +28,6 @@ from custom_components.gismeteo.const import (
     CONDITION_FOG_CLASSES,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    HTTP_OK,
 )
 from custom_components.gismeteo.gismeteo import (
     ApiError,

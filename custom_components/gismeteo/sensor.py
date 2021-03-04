@@ -1,21 +1,21 @@
-#
-#  Copyright (c) 2019-2020, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
 """
-The Gismeteo Sensor.
+The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
+
 import logging
 
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, PLATFORM_SCHEMA
+import voluptuous as vol
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
-    ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
     ATTR_NAME,
@@ -27,10 +27,8 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-import voluptuous as vol
 
-from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
+from . import GismeteoDataUpdateCoordinator
 from .const import (
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
@@ -43,12 +41,12 @@ from .const import (
     CONF_YAML,
     COORDINATOR,
     DEFAULT_NAME,
+    DOMAIN,
     FORECAST_SENSOR_TYPE,
-    NAME,
     PRECIPITATION_AMOUNT,
     SENSOR_TYPES,
 )
-from .gismeteo import Gismeteo
+from .entity import GismeteoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     async_add_entities(entities, False)
 
 
-class GismeteoSensor(CoordinatorEntity):
+class GismeteoSensor(GismeteoEntity):
     """Implementation of an Gismeteo sensor."""
 
     def __init__(
@@ -129,21 +127,10 @@ class GismeteoSensor(CoordinatorEntity):
         coordinator: GismeteoDataUpdateCoordinator,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator)
-
-        self._name = name
+        super().__init__(name, coordinator)
         self.kind = kind
         self._state = None
         self._unit_of_measurement = SENSOR_TYPES[self.kind][ATTR_UNIT_OF_MEASUREMENT]
-
-    @property
-    def _gismeteo(self) -> Gismeteo:
-        return self.coordinator.gismeteo
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_NAME]}"
 
     @property
     def unique_id(self):
@@ -151,13 +138,9 @@ class GismeteoSensor(CoordinatorEntity):
         return f"{self._gismeteo.unique_id}-{self.kind}".lower()
 
     @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
-            "name": NAME,
-            "entry_type": "service",
-        }
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_NAME]}"
 
     @property
     def state(self):
@@ -234,10 +217,3 @@ class GismeteoSensor(CoordinatorEntity):
     def device_class(self):
         """Return the device_class."""
         return SENSOR_TYPES[self.kind][ATTR_DEVICE_CLASS]
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
-        }

@@ -8,7 +8,7 @@ from custom_components.gismeteo import DOMAIN
 from custom_components.gismeteo.const import CONF_FORECAST, SENSOR_TYPES
 
 
-async def test_async_setup_platform(hass):
+async def test_async_setup_platform(hass: HomeAssistant):
     """Test platform setup."""
     config = {
         SENSOR_DOMAIN: [
@@ -21,5 +21,5 @@ async def test_async_setup_platform(hass):
         ]
     }
     with assert_setup_component(2, SENSOR_DOMAIN):
-        assert await async_setup_component(hass, SENSOR_DOMAIN, config)
+        assert await async_setup_component(hass: HomeAssistant, SENSOR_DOMAIN, config)
     await hass.async_block_till_done()

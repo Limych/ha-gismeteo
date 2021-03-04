@@ -7,7 +7,7 @@ from pytest_homeassistant_custom_component.common import assert_setup_component
 from custom_components.gismeteo import DOMAIN
 
 
-async def test_async_setup_platform(hass):
+async def test_async_setup_platform(hass: HomeAssistant):
     """Test platform setup."""
     config = {
         WEATHER_DOMAIN: [
@@ -16,5 +16,5 @@ async def test_async_setup_platform(hass):
         ]
     }
     with assert_setup_component(2, WEATHER_DOMAIN):
-        assert await async_setup_component(hass, WEATHER_DOMAIN, config)
+        assert await async_setup_component(hass: HomeAssistant, WEATHER_DOMAIN, config)
     await hass.async_block_till_done()

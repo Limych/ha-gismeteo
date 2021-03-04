@@ -31,7 +31,7 @@ def get_mock_config_entry(forecast=False) -> MockConfigEntry:
     )
 
 
-async def init_integration(hass, forecast=False) -> MockConfigEntry:
+async def init_integration(hass: HomeAssistant, forecast=False) -> MockConfigEntry:
     """Set up the Gismeteo integration in Home Assistant."""
     entry = get_mock_config_entry(forecast)
 
@@ -43,16 +43,16 @@ async def init_integration(hass, forecast=False) -> MockConfigEntry:
         return location_data if args[0].find("/cities/") >= 0 else forecast_data
 
     with patch.object(Gismeteo, "_async_get_data", side_effect=mock_data):
-        entry.add_to_hass(hass)
+        entry.add_to_hass(hass: HomeAssistant)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
     return entry
 
 
-async def test_update_interval(hass):
+async def test_update_interval(hass: HomeAssistant):
     """Test correct update interval."""
-    entry = await init_integration(hass)
+    entry = await init_integration(hass: HomeAssistant)
 
     assert entry.state == ENTRY_STATE_LOADED
 
@@ -61,7 +61,7 @@ async def test_update_interval(hass):
     with patch.object(Gismeteo, "async_update") as mock_current:
         assert mock_current.call_count == 0
 
-        async_fire_time_changed(hass, future)
+        async_fire_time_changed(hass: HomeAssistant, future)
         await hass.async_block_till_done()
 
         assert mock_current.call_count == 1

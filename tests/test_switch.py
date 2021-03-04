@@ -11,11 +11,11 @@ from custom_components.integration_blueprint.const import DEFAULT_NAME, DOMAIN, 
 from .const import MOCK_CONFIG
 
 
-async def test_switch_services(hass):
+async def test_switch_services(hass: HomeAssistant):
     """Test switch services."""
     # Create a mock entry so we don't have to go through config flow
     config_entry = MockConfigEntry(domain=DOMAIN, data=MOCK_CONFIG, entry_id="test")
-    assert await async_setup_entry(hass, config_entry)
+    assert await async_setup_entry(hass: HomeAssistant, config_entry)
     await hass.async_block_till_done()
 
     # Functions/objects can be patched directly in test code as well and can be used to test
