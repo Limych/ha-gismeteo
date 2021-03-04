@@ -4,7 +4,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .api import IntegrationBlueprintApiClient
+from .gismeteo import IntegrationBlueprintApiClient
 from .const import (  # pylint: disable=unused-import
     CONF_PASSWORD,
     CONF_USERNAME,
