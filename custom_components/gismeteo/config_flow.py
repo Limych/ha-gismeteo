@@ -1,107 +1,101 @@
-"""Adds config flow for Blueprint."""
-import voluptuous as vol
+#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Creative Commons BY-NC-SA 4.0 International Public License
+#  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
+"""
+The Gismeteo component.
+
+For more details about this platform, please refer to the documentation at
+https://github.com/Limych/ha-gismeteo/
+"""
+
+import asyncio
+import logging
+
+from aiohttp import ClientConnectorError, ClientError
+from async_timeout import timeout
 from homeassistant import config_entries
-from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_NAME
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 
-from .gismeteo import IntegrationBlueprintApiClient
-from .const import (  # pylint: disable=unused-import
-    CONF_PASSWORD,
-    CONF_USERNAME,
-    DOMAIN,
-    PLATFORMS,
+from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
+from .const import (
+    CONF_FORECAST,
+    CONF_PLATFORMS,
+    FORECAST_MODE_DAILY,
+    FORECAST_MODE_HOURLY,
 )
+from .gismeteo import ApiError
+
+_LOGGER = logging.getLogger(__name__)
 
 
-class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for Gismeteo."""
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
-    def __init__(self):
-        """Initialize."""
-        self._errors = {}
+    async def async_step_import(self, platform_config):
+        """Import a config entry.
+
+        Special type of import, we're not actually going to store any data.
+        Instead, we're going to rely on the values that are in config file.
+        """
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
+
+        return self.async_create_entry(title="configuration.yaml", data=platform_config)
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-        self._errors = {}
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
-        # Uncomment the next 2 lines if only a single instance of the integration is allowed:
-        # if self._async_current_entries():
-        #     return self.async_abort(reason="single_instance_allowed")     # noqa: E800
+        errors = {}
 
         if user_input is not None:
-            valid = await self._test_credentials(
-                user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
-            )
-            if valid:
-                return self.async_create_entry(
-                    title=user_input[CONF_USERNAME], data=user_input
+            platforms = user_input.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
+            user_input[CONF_PLATFORMS] = platforms
+
+            try:
+                async with timeout(10):
+                    gismeteo = get_gismeteo(self.hass, user_input)
+                    await gismeteo.async_update()
+            except (ApiError, ClientConnectorError, asyncio.TimeoutError, ClientError):
+                errors["base"] = "cannot_connect"
+            else:
+                await self.async_set_unique_id(
+                    gismeteo.unique_id, raise_on_progress=False
                 )
 
-            self._errors["base"] = "auth"
-
-        return await self._show_config_form(user_input)
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        """Get component options flow."""
-        return BlueprintOptionsFlowHandler(config_entry)
-
-    async def _show_config_form(self, user_input):  # pylint: disable=unused-argument
-        """Show the configuration form to edit location data."""
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
-            ),
-            errors=self._errors,
-        )
-
-    async def _test_credentials(self, username, password):
-        """Return true if credentials is valid."""
-        try:
-            session = async_create_clientsession(self.hass)
-            client = IntegrationBlueprintApiClient(username, password, session)
-            await client.async_get_data()
-            return True
-        except Exception:  # pylint: disable=broad-except
-            pass
-        return False
-
-
-class BlueprintOptionsFlowHandler(config_entries.OptionsFlow):
-    """Blueprint config flow options handler."""
-
-    def __init__(self, config_entry):
-        """Initialize HACS options flow."""
-        self.config_entry = config_entry
-        self.options = dict(config_entry.options)
-
-    async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
-        """Manage the options."""
-        return await self.async_step_user()
-
-    async def async_step_user(self, user_input=None):
-        """Handle a flow initialized by the user."""
-        if user_input is not None:
-            self.options.update(user_input)
-            return await self._update_options()
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME], data=user_input
+                )
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(x, default=self.options.get(x, True)): bool
-                    for x in sorted(PLATFORMS)
+                    vol.Optional(
+                        CONF_LATITUDE, default=self.hass.config.latitude
+                    ): cv.latitude,
+                    vol.Optional(
+                        CONF_LONGITUDE, default=self.hass.config.longitude
+                    ): cv.longitude,
+                    vol.Optional(
+                        CONF_NAME, default=self.hass.config.location_name
+                    ): str,
+                    vol.Optional(
+                        CONF_FORECAST,
+                        default=self.hass.config.get(CONF_FORECAST, False),
+                    ): bool,
+                    vol.Optional(CONF_MODE, default=FORECAST_MODE_HOURLY): vol.In(
+                        [FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]
+                    ),
                 }
             ),
-        )
-
-    async def _update_options(self):
-        """Update config entry options."""
-        return self.async_create_entry(
-            title=self.config_entry.data.get(CONF_USERNAME), data=self.options
+            errors=errors,
         )
