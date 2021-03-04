@@ -10,7 +10,7 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.gismeteo import DOMAIN, ApiError, Gismeteo
+from custom_components.gismeteo import DOMAIN, ApiError, GismeteoApiClient
 
 from . import get_mock_config_entry, init_integration
 
@@ -49,7 +49,7 @@ async def test_config_not_ready(hass: HomeAssistant):
             return location_data
         raise ApiError
 
-    with patch.object(Gismeteo, "_async_get_data", side_effect=mock_data):
+    with patch.object(GismeteoApiClient, "_async_get_data", side_effect=mock_data):
         entry.add_to_hass(hass: HomeAssistant)
         await hass.config_entries.async_setup(entry.entry_id)
 

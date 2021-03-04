@@ -11,23 +11,23 @@ https://github.com/Limych/ha-gismeteo/
 import asyncio
 import logging
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
 from homeassistant import config_entries
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_NAME
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
+from .api import ApiError
 from .const import (
     CONF_FORECAST,
     CONF_PLATFORMS,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
 )
-from .gismeteo import ApiError
 
 _LOGGER = logging.getLogger(__name__)
 

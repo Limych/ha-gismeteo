@@ -2,18 +2,14 @@
 from unittest.mock import patch
 
 import pytest
-from homeassistant import config_entries, data_entry_flow
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-from custom_components.integration_blueprint.const import (
-    BINARY_SENSOR,
+from custom_components.gismeteo.const import (
     DOMAIN,
     PLATFORMS,
     SENSOR,
-    SWITCH,
 )
-
-from .const import MOCK_CONFIG
+from homeassistant import config_entries, data_entry_flow
+from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
 # This fixture bypasses the actual setup of the integration
@@ -87,7 +83,7 @@ async def test_options_flow(hass: HomeAssistant):
     # Create a new MockConfigEntry and add to HASS (we're bypassing config
     # flow entirely)
     entry = MockConfigEntry(domain=DOMAIN, data=MOCK_CONFIG, entry_id="test")
-    entry.add_to_hass(hass: HomeAssistant)
+    entry.add_to_hass(hass)
 
     # Initialize an options flow
     result = await hass.config_entries.options.async_init(entry.entry_id)

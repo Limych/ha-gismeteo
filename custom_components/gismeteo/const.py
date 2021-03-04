@@ -10,7 +10,9 @@ https://github.com/Limych/ha-gismeteo/
 
 from datetime import timedelta
 
+from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
+from homeassistant.components.weather import DOMAIN as WEATHER
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
@@ -25,8 +27,6 @@ from homeassistant.const import (
     SPEED_METERS_PER_SECOND,
     TEMP_CELSIUS,
 )
-from homeassistant.components.sensor import DOMAIN as SENSOR
-from homeassistant.components.weather import DOMAIN as WEATHER
 
 try:
     from homeassistant.const import PERCENTAGE

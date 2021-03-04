@@ -12,8 +12,8 @@ from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import GismeteoDataUpdateCoordinator
+from .api import GismeteoApiClient
 from .const import ATTRIBUTION, DOMAIN, NAME
-from .gismeteo import Gismeteo
 
 
 class GismeteoEntity(CoordinatorEntity):
@@ -25,7 +25,7 @@ class GismeteoEntity(CoordinatorEntity):
         self._name = name
 
     @property
-    def _gismeteo(self) -> Gismeteo:
+    def _gismeteo(self) -> GismeteoApiClient:
         return self.coordinator.gismeteo
 
     @property

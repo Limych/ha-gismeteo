@@ -1,6 +1,7 @@
 """Tests for GisMeteo integration."""
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.const import CONF_NAME, CONF_PLATFORM
+from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import assert_setup_component
 
@@ -16,5 +17,5 @@ async def test_async_setup_platform(hass: HomeAssistant):
         ]
     }
     with assert_setup_component(2, WEATHER_DOMAIN):
-        assert await async_setup_component(hass: HomeAssistant, WEATHER_DOMAIN, config)
+        assert await async_setup_component(hass, WEATHER_DOMAIN, config)
     await hass.async_block_till_done()

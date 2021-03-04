@@ -2,6 +2,7 @@
 from unittest.mock import patch
 
 from homeassistant.config_entries import ENTRY_STATE_LOADED
+from homeassistant.core import HomeAssistant
 from homeassistant.util import utcnow
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -9,7 +10,7 @@ from pytest_homeassistant_custom_component.common import (
     load_fixture,
 )
 
-from custom_components.gismeteo import DOMAIN, UPDATE_INTERVAL, Gismeteo
+from custom_components.gismeteo import DOMAIN, UPDATE_INTERVAL, GismeteoApiClient
 
 
 def get_mock_config_entry(forecast=False) -> MockConfigEntry:
@@ -42,8 +43,8 @@ async def init_integration(hass: HomeAssistant, forecast=False) -> MockConfigEnt
     def mock_data(*args, **kwargs):
         return location_data if args[0].find("/cities/") >= 0 else forecast_data
 
-    with patch.object(Gismeteo, "_async_get_data", side_effect=mock_data):
-        entry.add_to_hass(hass: HomeAssistant)
+    with patch.object(GismeteoApiClient, "_async_get_data", side_effect=mock_data):
+        entry.add_to_hass(hass)
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -52,16 +53,16 @@ async def init_integration(hass: HomeAssistant, forecast=False) -> MockConfigEnt
 
 async def test_update_interval(hass: HomeAssistant):
     """Test correct update interval."""
-    entry = await init_integration(hass: HomeAssistant)
+    entry = await init_integration(hass)
 
     assert entry.state == ENTRY_STATE_LOADED
 
     future = utcnow() + UPDATE_INTERVAL
 
-    with patch.object(Gismeteo, "async_update") as mock_current:
+    with patch.object(GismeteoApiClient, "async_update") as mock_current:
         assert mock_current.call_count == 0
 
-        async_fire_time_changed(hass: HomeAssistant, future)
+        async_fire_time_changed(hass, future)
         await hass.async_block_till_done()
 
         assert mock_current.call_count == 1

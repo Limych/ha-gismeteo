@@ -9,9 +9,7 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import asyncio
-import json
 import logging
-import os
 
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
@@ -24,16 +22,19 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import STORAGE_DIR
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .api import ApiError, GismeteoApiClient
 from .const import (
     CONF_CACHE_DIR,
     CONF_PLATFORMS,
     CONF_YAML,
     COORDINATOR,
+    DOMAIN,
     FORECAST_MODE_HOURLY,
+    PLATFORMS,
+    STARTUP_MESSAGE,
     UNDO_UPDATE_LISTENER,
     UPDATE_INTERVAL,
-    DOMAIN, STARTUP_MESSAGE, PLATFORMS)
-from .gismeteo import ApiError, Gismeteo
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,9 +54,9 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
 
 
-def get_gismeteo(hass: HomeAssistant, config) -> Gismeteo:
+def get_gismeteo(hass: HomeAssistant, config) -> GismeteoApiClient:
     """Prepare Gismeteo instance."""
-    return Gismeteo(
+    return GismeteoApiClient(
         async_get_clientsession(hass),
         latitude=config.get(CONF_LATITUDE, hass.config.latitude),
         longitude=config.get(CONF_LONGITUDE, hass.config.longitude),
@@ -151,7 +152,7 @@ async def update_listener(hass: HomeAssistant, config_entry):
 class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Gismeteo data API."""
 
-    def __init__(self, hass: HomeAssistant, gismeteo: Gismeteo):
+    def __init__(self, hass: HomeAssistant, gismeteo: GismeteoApiClient):
         """Initialize."""
         self.gismeteo = gismeteo
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)

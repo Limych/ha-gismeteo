@@ -8,13 +8,13 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 
-from datetime import datetime
 import logging
 import time
+from datetime import datetime
 from typing import Any, Callable, Optional
 
-from aiohttp import ClientSession
 import defusedxml.ElementTree as etree  # type: ignore
+from aiohttp import ClientSession
 from homeassistant.components.weather import (
     ATTR_CONDITION_CLEAR_NIGHT,
     ATTR_CONDITION_CLOUDY,
@@ -96,7 +96,7 @@ class ApiError(Exception):
         self.status = status
 
 
-class Gismeteo:
+class GismeteoApiClient:
     """Gismeteo API implementation."""
 
     def __init__(
