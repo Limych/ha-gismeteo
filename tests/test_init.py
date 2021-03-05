@@ -19,13 +19,7 @@ from . import get_mock_config_entry, init_integration
 
 async def test_async_setup(hass: HomeAssistant):
     """Test a successful setup component."""
-    await async_setup_component(
-        hass,
-        DOMAIN,
-        {
-            "name": "Home",
-        },
-    )
+    await async_setup_component(hass, DOMAIN, {})
     await hass.async_block_till_done()
 
 
@@ -41,7 +35,7 @@ async def test_async_setup_entry(hass: HomeAssistant):
 
 async def test_config_not_ready(hass: HomeAssistant):
     """Test for setup failure if connection to Gismeteo is missing."""
-    entry = get_mock_config_entry()
+    entry = get_mock_config_entry(hass)
 
     location_data = load_fixture("location.xml")
 

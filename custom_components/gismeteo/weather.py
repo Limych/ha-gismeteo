@@ -76,7 +76,7 @@ async def async_setup_platform(
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Add a Gismeteo weather entities."""
     entities = []
-    if config_entry.source == "import":
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
             if cfg[CONF_PLATFORM] != WEATHER_DOMAIN:

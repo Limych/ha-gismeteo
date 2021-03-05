@@ -1,34 +1,69 @@
 """Tests for GisMeteo integration."""
 from unittest.mock import patch
 
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.config_entries import SOURCE_IMPORT, SOURCE_USER
+from homeassistant.const import CONF_MONITORED_CONDITIONS, CONF_NAME, CONF_PLATFORM
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture
 
-from custom_components.gismeteo import DOMAIN, GismeteoApiClient
+from custom_components.gismeteo import DOMAIN, GismeteoApiClient, sensor
+from custom_components.gismeteo.const import CONF_FORECAST, CONF_YAML, SENSOR_TYPES
 
-
-def get_mock_config_entry(forecast=False) -> MockConfigEntry:
-    """Make mock configs."""
-    options = {}
-    if forecast:
-        options["forecast"] = True
-
-    return MockConfigEntry(
-        domain=DOMAIN,
-        title="Home",
-        unique_id="0123456",
-        data={
-            "latitude": 55.55,
-            "longitude": 122.12,
-            "name": "Home",
+TEST_CONFIG = {
+    SENSOR_DOMAIN: [
+        {
+            CONF_PLATFORM: DOMAIN,
         },
-        options=options,
-    )
+        {
+            CONF_PLATFORM: DOMAIN,
+            CONF_NAME: "Office",
+            CONF_MONITORED_CONDITIONS: list(SENSOR_TYPES.keys()),
+            CONF_FORECAST: True,
+        },
+    ],
+}
 
 
-async def init_integration(hass: HomeAssistant, forecast=False) -> MockConfigEntry:
+def get_mock_config_entry(
+    hass: HomeAssistant, source=SOURCE_USER, forecast=False
+) -> MockConfigEntry:
+    """Make mock configs."""
+    if source == SOURCE_USER:
+        options = {}
+        if forecast:
+            options["forecast"] = True
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Home",
+            unique_id="0123456",
+            data={
+                "latitude": 55.55,
+                "longitude": 122.12,
+                "name": "Home",
+            },
+            options=options,
+        )
+    else:
+        entry = MockConfigEntry(
+            domain=DOMAIN, source=SOURCE_IMPORT, title="Import", unique_id="12345"
+        )
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN].setdefault(CONF_YAML, {})
+        for config in TEST_CONFIG[SENSOR_DOMAIN]:
+            config = sensor.PLATFORM_SCHEMA(config)  # type: ignore
+            uid = "-".join([SENSOR_DOMAIN, config[CONF_NAME]])
+            hass.data[DOMAIN][CONF_YAML][uid] = config
+
+    return entry
+
+
+async def init_integration(
+    hass: HomeAssistant, source=SOURCE_USER, forecast=False
+) -> MockConfigEntry:
     """Set up the Gismeteo integration in Home Assistant."""
-    entry = get_mock_config_entry(forecast)
+    entry = get_mock_config_entry(hass, source, forecast)
 
     location_data = load_fixture("location.xml")
     forecast_data = load_fixture("forecast.xml")
@@ -43,20 +78,3 @@ async def init_integration(hass: HomeAssistant, forecast=False) -> MockConfigEnt
         await hass.async_block_till_done()
 
     return entry
-
-
-# async def test_update_interval(hass: HomeAssistant):
-#     """Test correct update interval."""
-#     entry = await init_integration(hass)
-#
-#     assert entry.state == ENTRY_STATE_LOADED
-#
-#     future = utcnow() + UPDATE_INTERVAL
-#
-#     with patch.object(GismeteoApiClient, "async_update") as mock_current:
-#         assert mock_current.call_count == 0
-#
-#         async_fire_time_changed(hass, future)
-#         await hass.async_block_till_done()
-#
-#         assert mock_current.call_count == 1

@@ -15,6 +15,7 @@ from aiohttp import ClientConnectorError
 from async_timeout import timeout
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_PLATFORM
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -43,12 +44,14 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up component."""
     # Print startup messages
+    _LOGGER.debug("async_setup(%s)", config)
     if hass.data.get(DOMAIN) is None:
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
     for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.source == "import":
+        _LOGGER.debug("entry = %s (%s)", entry, entry.source)
+        if entry.source == SOURCE_IMPORT:
             await hass.config_entries.async_remove(entry.entry_id)
 
     return True
@@ -85,13 +88,15 @@ async def _async_get_coordinator(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     """Set up Gismeteo as config entry."""
-    if config_entry.source == "import":
+    _LOGGER.debug("async_setup_entry")
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         await asyncio.sleep(12)
 
         platforms = set()
 
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
+            _LOGGER.debug("Setup entry %s", uid)
             platforms.add(cfg[CONF_PLATFORM])
             coordinator = await _async_get_coordinator(hass, cfg)
             hass.data[DOMAIN][uid] = {

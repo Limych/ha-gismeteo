@@ -76,7 +76,7 @@ async def async_setup_platform(
             )
         )
 
-    uid = SENSOR_DOMAIN + config[CONF_NAME]
+    uid = "-".join([SENSOR_DOMAIN, config[CONF_NAME]])
     config[CONF_PLATFORM] = SENSOR_DOMAIN
     hass.data[DOMAIN][CONF_YAML][uid] = config
 
@@ -84,7 +84,7 @@ async def async_setup_platform(
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Add Gismeteo sensor entities."""
     entities = []
-    if config_entry.source == "import":
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
             if cfg[CONF_PLATFORM] != SENSOR_DOMAIN:
