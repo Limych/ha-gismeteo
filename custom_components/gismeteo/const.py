@@ -36,7 +36,7 @@ except ImportError:  # pragma: no cover
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.1.1"
+VERSION = "2.1.2.dev0"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-blueprint/issues"
 
