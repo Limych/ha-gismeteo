@@ -44,13 +44,11 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up component."""
     # Print startup messages
-    _LOGGER.debug("async_setup(%s)", config)
-    if hass.data.get(DOMAIN) is None:
-        hass.data.setdefault(DOMAIN, {})
-        _LOGGER.info(STARTUP_MESSAGE)
+    hass.data.setdefault(DOMAIN, {})
+    _LOGGER.info(STARTUP_MESSAGE)
 
+    # Clean up old imports from configuration.yaml
     for entry in hass.config_entries.async_entries(DOMAIN):
-        _LOGGER.debug("entry = %s (%s)", entry, entry.source)
         if entry.source == SOURCE_IMPORT:
             await hass.config_entries.async_remove(entry.entry_id)
 
@@ -88,7 +86,6 @@ async def _async_get_coordinator(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     """Set up Gismeteo as config entry."""
-    _LOGGER.debug("async_setup_entry")
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         await asyncio.sleep(12)
@@ -96,7 +93,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
         platforms = set()
 
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            _LOGGER.debug("Setup entry %s", uid)
             platforms.add(cfg[CONF_PLATFORM])
             coordinator = await _async_get_coordinator(hass, cfg)
             hass.data[DOMAIN][uid] = {

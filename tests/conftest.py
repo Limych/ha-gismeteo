@@ -17,6 +17,9 @@
 from unittest.mock import patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import load_fixture
+
+from custom_components.gismeteo import GismeteoApiClient
 
 pytest_plugins = "pytest_homeassistant_custom_component"  # pylint: disable=invalid-name
 
@@ -30,4 +33,18 @@ def skip_notifications_fixture():
     with patch("homeassistant.components.persistent_notification.async_create"), patch(
         "homeassistant.components.persistent_notification.async_dismiss"
     ):
+        yield
+
+
+@pytest.fixture
+def gismeteo_api():
+    """Make mock Gismeteo API client."""
+    location_data = load_fixture("location.xml")
+    forecast_data = load_fixture("forecast.xml")
+
+    # pylint: disable=unused-argument
+    def mock_data(*args, **kwargs):
+        return location_data if args[0].find("/cities/") >= 0 else forecast_data
+
+    with patch.object(GismeteoApiClient, "_async_get_data", side_effect=mock_data):
         yield

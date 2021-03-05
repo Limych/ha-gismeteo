@@ -8,12 +8,12 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 
-from homeassistant.const import ATTR_ATTRIBUTION
+from homeassistant.const import ATTR_ID
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import GismeteoDataUpdateCoordinator
 from .api import GismeteoApiClient
-from .const import ATTRIBUTION, DOMAIN, NAME
+from .const import DOMAIN, NAME
 
 
 class GismeteoEntity(CoordinatorEntity):
@@ -32,14 +32,8 @@ class GismeteoEntity(CoordinatorEntity):
     def device_info(self):
         """Return the device info."""
         return {
-            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
+            "identifiers": {(DOMAIN, self._gismeteo.attributes[ATTR_ID])},
             "name": NAME,
-            "entry_type": "service",
-        }
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
+            "manufacturer": NAME,
+            "model": "Forecast",
         }

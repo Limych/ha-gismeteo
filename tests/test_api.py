@@ -15,7 +15,7 @@ from unittest.mock import patch
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
-from homeassistant.const import HTTP_OK
+from homeassistant.const import ATTR_ID, ATTR_NAME, HTTP_OK
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -111,12 +111,12 @@ async def test_async_get_location():
         async with ClientSession() as client:
             gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
 
-            assert gismeteo.location_key is None
+            assert gismeteo.attributes[ATTR_ID] is None
 
             await gismeteo.async_get_location()
 
-    assert gismeteo.location_key == 167413
-    assert gismeteo.location_name == "Razvilka"
+    assert gismeteo.attributes[ATTR_ID] == 167413
+    assert gismeteo.attributes[ATTR_NAME] == "Razvilka"
 
     with patch.object(
         GismeteoApiClient,

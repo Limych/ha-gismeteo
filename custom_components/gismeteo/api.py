@@ -10,10 +10,10 @@ https://github.com/Limych/ha-gismeteo/
 
 import logging
 import time
+import xml.etree.ElementTree as etree  # type: ignore
 from datetime import datetime
 from typing import Any, Callable, Optional
 
-import defusedxml.ElementTree as etree  # type: ignore
 from aiohttp import ClientSession
 from homeassistant.components.weather import (
     ATTR_CONDITION_CLEAR_NIGHT,
@@ -42,7 +42,14 @@ from homeassistant.components.weather import (
     ATTR_WEATHER_WIND_BEARING,
     ATTR_WEATHER_WIND_SPEED,
 )
-from homeassistant.const import HTTP_OK, STATE_UNKNOWN
+from homeassistant.const import (
+    ATTR_ID,
+    ATTR_LATITUDE,
+    ATTR_LONGITUDE,
+    ATTR_NAME,
+    HTTP_OK,
+    STATE_UNKNOWN,
+)
 from homeassistant.util import dt as dt_util
 
 from .cache import Cache
@@ -123,8 +130,9 @@ class GismeteoApiClient:
         self._cache = Cache(params) if params.get("cache_dir") is not None else None
         self._latitude = latitude
         self._longitude = longitude
-        self._location_key = location_key
-        self._location_name = None
+        self._attributes = {
+            ATTR_ID: location_key,
+        }
 
         self._current = {}
         self._forecast = []
@@ -149,7 +157,7 @@ class GismeteoApiClient:
     @property
     def unique_id(self):
         """Return a unique_id."""
-        return f"{self._location_key}-{self._mode}".lower()
+        return f"{self._attributes[ATTR_ID]}-{self._mode}".lower()
 
     @property
     def current(self):
@@ -157,14 +165,9 @@ class GismeteoApiClient:
         return self._current
 
     @property
-    def location_name(self):
-        """Return location name."""
-        return self._location_name
-
-    @property
-    def location_key(self):
-        """Return location key."""
-        return self._location_key
+    def attributes(self):
+        """Return forecast attributes."""
+        return self._attributes
 
     async def _async_get_data(self, url: str, cache_fname=None) -> str:
         """Retreive data from Gismeteo API and cache results."""
@@ -189,8 +192,9 @@ class GismeteoApiClient:
 
     async def async_get_location(self):
         """Retreive location data from Gismeteo."""
-        url = (ENDPOINT_URL + "/cities/?lat={}&lng={}&count=1&lang=en").format(
-            self._latitude, self._longitude
+        url = (
+            ENDPOINT_URL
+            + f"/cities/?lat={self._latitude}&lng={self._longitude}&count=1&lang=en"
         )
         cache_fname = f"location_{self._latitude}_{self._longitude}"
 
@@ -198,8 +202,12 @@ class GismeteoApiClient:
         try:
             xml = etree.fromstring(response)
             item = xml.find("item")
-            self._location_key = self._get(item, "id", int)
-            self._location_name = self._get(item, "n")
+            self._attributes = {
+                ATTR_ID: self._get(item, "id", int),
+                ATTR_NAME: self._get(item, "n"),
+                ATTR_LATITUDE: self._get(item, "lat", float),
+                ATTR_LONGITUDE: self._get(item, "lng", float),
+            }
         except (etree.ParseError, TypeError, AttributeError) as ex:
             raise ApiError(
                 "Can't retrieve location data! Invalid server response."
@@ -375,11 +383,11 @@ class GismeteoApiClient:
 
     async def async_update(self) -> bool:
         """Get the latest data from Gismeteo."""
-        if not self._location_key:
+        if self.attributes[ATTR_ID] is None:
             await self.async_get_location()
 
-        url = (ENDPOINT_URL + "/forecast/?city={}&lang=en").format(self._location_key)
-        cache_fname = f"forecast_{self._location_key}"
+        url = f"{ENDPOINT_URL}/forecast/?city={self.attributes[ATTR_ID]}&lang=en"
+        cache_fname = f"forecast_{self.attributes[ATTR_ID]}"
 
         response = await self._async_get_data(url, cache_fname)
         try:

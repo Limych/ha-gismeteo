@@ -163,7 +163,8 @@ CONDITION_FOG_CLASSES = [
 PRECIPITATION_AMOUNT = (0, 2, 6, 16)
 
 SENSOR_TYPES = {
-    "weather": {
+    "weather": {},  # => condition
+    "condition": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: None,
         ATTR_NAME: "Condition",
@@ -174,18 +175,6 @@ SENSOR_TYPES = {
         ATTR_ICON: None,
         ATTR_NAME: "Temperature",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-    },
-    "wind_speed": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-windy",
-        ATTR_NAME: "Wind speed",
-        ATTR_UNIT_OF_MEASUREMENT: SPEED_METERS_PER_SECOND,
-    },
-    "wind_bearing": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-windy",
-        ATTR_NAME: "Wind bearing",
-        ATTR_UNIT_OF_MEASUREMENT: DEGREE,
     },
     "humidity": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
@@ -198,6 +187,18 @@ SENSOR_TYPES = {
         ATTR_ICON: None,
         ATTR_NAME: "Pressure",
         ATTR_UNIT_OF_MEASUREMENT: PRESSURE_HPA,
+    },
+    "wind_speed": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-windy",
+        ATTR_NAME: "Wind speed",
+        ATTR_UNIT_OF_MEASUREMENT: SPEED_METERS_PER_SECOND,
+    },
+    "wind_bearing": {
+        ATTR_DEVICE_CLASS: None,
+        ATTR_ICON: "mdi:weather-windy",
+        ATTR_NAME: "Wind bearing",
+        ATTR_UNIT_OF_MEASUREMENT: DEGREE,
     },
     "clouds": {
         ATTR_DEVICE_CLASS: None,

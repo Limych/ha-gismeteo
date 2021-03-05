@@ -9,6 +9,7 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
+from typing import List
 
 import voluptuous as vol
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
@@ -16,6 +17,7 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
+    ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
     ATTR_NAME,
@@ -36,6 +38,7 @@ from .const import (
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
     ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
+    ATTRIBUTION,
     CONF_CACHE_DIR,
     CONF_FORECAST,
     CONF_YAML,
@@ -81,6 +84,20 @@ async def async_setup_platform(
     hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
+def fix_kinds(kinds: List[str], warn=True) -> List[str]:
+    """Remove deprecated values from kinds."""
+    if "weather" in kinds:
+        if warn:
+            _LOGGER.warning(
+                'Deprecated condition "weather". Please replace it to "condition"'
+            )
+        kinds = set(kinds)
+        kinds.remove("weather")
+        kinds = list(kinds | {"condition"})
+
+    return kinds
+
+
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Add Gismeteo sensor entities."""
     entities = []
@@ -93,7 +110,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             name = cfg[CONF_NAME]
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-            for kind in cfg.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
+            for kind in fix_kinds(cfg[CONF_MONITORED_CONDITIONS]):
                 entities.append(GismeteoSensor(name, kind, coordinator))
 
             if cfg.get(CONF_FORECAST, True):
@@ -105,8 +122,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         name = config_entry.data[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
-        for kind in config_entry.data.get(
-            CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()
+        for kind in fix_kinds(
+            config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
+            warn=False,
         ):
             entities.append(GismeteoSensor(name, kind, coordinator))
 
@@ -147,7 +165,7 @@ class GismeteoSensor(GismeteoEntity):
         """Return the state."""
         data = self._gismeteo.current
         try:
-            if self.kind == "weather":
+            if self.kind == "condition":
                 self._state = self._gismeteo.condition()
             elif self.kind == "forecast":
                 self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
@@ -217,3 +235,10 @@ class GismeteoSensor(GismeteoEntity):
     def device_class(self):
         """Return the device_class."""
         return SENSOR_TYPES[self.kind][ATTR_DEVICE_CLASS]
+
+    @property
+    def device_state_attributes(self):
+        """Return the state attributes."""
+        attrs = self._gismeteo.attributes.copy()
+        attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
+        return attrs

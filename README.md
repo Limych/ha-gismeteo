@@ -131,14 +131,14 @@ I put a lot of work into making this repo and component available and updated to
 
 **forecast:**\
   _(boolean) (Optional)_\
-  Enables the forecast. The default is to display the current conditions.\
+  Enables the forecast for 3h. The default is to display only the current conditions.\
   _Default value: false_
 
 **monitored_conditions:**\
   _(list) (Required)_\
   Conditions to display in the frontend.
 
-> **weather**\
+> **condition**\
 >   A human-readable text summary.
 >
 > **temperature**\
