@@ -1,4 +1,4 @@
-defusedxml==0.6.0
+defusedxml==0.7.0
 geopy==2.1.0
 geohash2==1.1
 homeassistant
