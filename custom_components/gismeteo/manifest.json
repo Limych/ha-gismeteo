@@ -1,15 +1,15 @@
 {
-    "version": "2.1.0",
-    "codeowners": [
-        "@limych"
-    ],
+    "domain": "gismeteo",
+    "name": "Gismeteo",
+    "version": "2.1.1.dev0",
+    "documentation": "https://github.com/Limych/ha-gismeteo",
+    "issue_tracker": "https://github.com/Limych/ha-blueprint/issues",
     "dependencies": [
         "weather"
     ],
-    "documentation": "https://github.com/Limych/ha-gismeteo",
-    "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
-    "domain": "gismeteo",
-    "name": "Gismeteo",
-    "requirements": [],
-    "config_flow": true
+    "config_flow": true,
+    "codeowners": [
+        "@Limych"
+    ],
+    "requirements": []
 }

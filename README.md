@@ -2,24 +2,20 @@
 
 # Gismeteo Weather Provider for Home Assistant
 
-[![GitHub Release](https://img.shields.io/github/tag-date/Limych/ha-gismeteo?label=release&style=popout)](https://github.com/Limych/ha-gismeteo/releases)
-[![GitHub Activity](https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout)](https://github.com/Limych/ha-gismeteo/commits/master)
-[![License](https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout)](LICENSE.md)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Limych/ha-gismeteo/Python%20testing)
-[![Coverage Status](https://img.shields.io/coveralls/github/Limych/ha-gismeteo?style=popout)](https://coveralls.io/github/Limych/ha-gismeteo)
-![Requires.io](https://img.shields.io/requires/github/Limych/ha-gismeteo)
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]][license]
 
-[![hacs](https://img.shields.io/badge/HACS-Default-orange.svg?style=popout)][hacs]
-![Project Maintenance](https://img.shields.io/badge/maintainer-Andrey%20Khrolenok%20%40Limych-blue.svg?style=popout)
+[![hacs][hacs-shield]][hacs]
+[![Project Maintenance][maintenance-shield]][user_profile]
 
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/Limych/ha-gismeteo?style=popout)](https://github.com/Limych/ha-gismeteo/pulls)
-[![Bugs](https://img.shields.io/github/issues/Limych/ha-gismeteo/bug.svg?colorB=red&label=bugs&style=popout)](https://github.com/Limych/ha-gismeteo/issues?q=is%3Aopen+is%3Aissue+label%3ABug)
+[![Community Forum][forum-shield]][forum]
 
-[![Community Forum](https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout)][forum-support]
+_Component to integrate with Gismeteo weather provider._
 
 This component can be used in two different ways: as a weather provider for any given coordinates and as a set of sensors for current coordinates of a house.
 
-![Gismeteo Logo](gismeteo_logo.jpg)
+![Gismeteo Logo][exampleimg]
 
 *NB. You can find a real example of using this component in [my Home Assistant configuration](https://github.com/Limych/HomeAssistantConfiguration).*
 
@@ -31,11 +27,13 @@ I also suggest you [visit the support topic][forum-support] on the community for
 
 ### Install from HACS (recommended)
 
-1. Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
+1. Have [HACS][hacs] installed, this will allow you to easily manage and track updates.
 1. Search for "Gismeteo Weather Provider".
 1. Click Install below the found integration.
-1. Configure integration via Home Assistant GUI or via your `configuration.yaml` file using the configuration instructions below.
-1. Restart Home Assistant
+1. _If you want to configure component via Home Assistant UI..._\
+    in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Gismeteo".
+1. _If you want to configure component via `configuration.yaml`..._\
+    follow instructions below, then restart Home Assistant.
 
 ### Manual installation
 
@@ -44,8 +42,11 @@ I also suggest you [visit the support topic][forum-support] on the community for
 1. In the `custom_components` directory (folder) create a new folder called `gismeteo`.
 1. Download file `gismeteo.zip` from the [latest release section][latest-release] in this repository.
 1. Extract _all_ files from this archive you downloaded in the directory (folder) `gismeteo` you created.
-1. Configure integration via Home Assistant GUI or via your `configuration.yaml` file using the configuration instructions below.
 1. Restart Home Assistant
+1. _If you want to configure component via Home Assistant UI..._\
+    in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Gismeteo".
+1. _If you want to configure component via `configuration.yaml`..._\
+    follow instructions below, then restart Home Assistant.
 
 ### Weather Provider Configuration
 
@@ -130,30 +131,30 @@ I put a lot of work into making this repo and component available and updated to
 
 **forecast:**\
   _(boolean) (Optional)_\
-  Enables the forecast. The default is to display the current conditions.\
+  Enables the forecast for 3h. The default is to display only the current conditions.\
   _Default value: false_
 
 **monitored_conditions:**\
   _(list) (Required)_\
   Conditions to display in the frontend.
 
-> **weather**\
+> **condition**\
 >   A human-readable text summary.
 >
 > **temperature**\
->   The current temperature.
+>   The current temperature of air.
+>
+> **humidity**\
+>   The relative humidity of air.
+>
+> **pressure**\
+>   The sea-level air pressure in millibars.
 >
 > **wind_speed**\
 >   The wind speed.
 >
 > **wind_bearing**\
 >   The wind bearing.
->
-> **humidity**\
->   The relative humidity.
->
-> **pressure**\
->   The sea-level air pressure in millibars.
 >
 > **clouds**\
 >   Description about cloud coverage.
@@ -191,6 +192,7 @@ To enable debug logs use this configuration:
 ```yaml
 # Example configuration.yaml entry
 logger:
+  default: info
   logs:
     custom_components.gismeteo: debug
 ```
@@ -198,14 +200,18 @@ logger:
 
 ## Contributions are welcome!
 
-If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+This is an active open-source project. We are always open to people who want to
+use the code or contribute to it.
+
+We have set up a separate document containing our [contribution guidelines](CONTRIBUTING.md).
+
+Thank you for being involved! :heart_eyes:
 
 ## Authors & contributors
 
-The original setup of this component is by [Andrey "Limych" Khrolenok][limych].
+The original setup of this component is by [Andrey "Limych" Khrolenok](https://github.com/Limych).
 
-For a full list of all authors and contributors,
-check [the contributor's page][contributors].
+For a full list of all authors and contributors, check [the contributor's page][contributors].
 
 ## License
 
@@ -213,8 +219,23 @@ creative commons Attribution-NonCommercial-ShareAlike 4.0 International License
 
 See separate [license file](LICENSE.md) for full text.
 
-[forum-support]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
-[hacs]: https://github.com/custom-components/hacs
-[latest-release]: https://github.com/Limych/ha-gismeteo/releases/latest
-[limych]: https://github.com/Limych
-[contributors]: https://github.com/Limych/ha-jq300/graphs/contributors
+***
+
+[component]: https://github.com/Limych/ha-gismeteo
+[commits-shield]: https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout
+[commits]: https://github.com/Limych/ha-gismeteo/commits/master
+[hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
+[hacs]: https://hacs.xyz
+[exampleimg]: https://github.com/Limych/ha-gismeteo/raw/master/gismeteo_logo.jpg
+[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
+[forum]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
+[license]: https://github.com/Limych/ha-gismeteo/blob/main/LICENSE.md
+[license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout
+[maintenance-shield]: https://img.shields.io/badge/maintainer-Andrey%20Khrolenok%20%40Limych-blue.svg?style=popout
+[releases-shield]: https://img.shields.io/github/release/Limych/ha-gismeteo.svg?style=popout
+[releases]: https://github.com/Limych/ha-gismeteo/releases
+[releases-latest]: https://github.com/Limych/ha-gismeteo/releases/latest
+[user_profile]: https://github.com/Limych
+[report_bug]: https://github.com/Limych/ha-gismeteo/issues/new?template=bug_report.md
+[suggest_idea]: https://github.com/Limych/ha-gismeteo/issues/new?template=feature_request.md
+[contributors]: https://github.com/Limych/ha-gismeteo/graphs/contributors

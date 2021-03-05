@@ -1,23 +1,26 @@
-#
-#  Copyright (c) 2019-2020, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
 """
-The Gismeteo Sensor.
+The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
-import logging
 
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, PLATFORM_SCHEMA
+import logging
+from typing import List
+
+import voluptuous as vol
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
+    ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     CONF_API_KEY,
     CONF_MONITORED_CONDITIONS,
@@ -26,29 +29,27 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-import voluptuous as vol
 
-from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
+from . import GismeteoDataUpdateCoordinator
 from .const import (
-    ATTR_LABEL,
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
     ATTR_WEATHER_PRECIPITATION_AMOUNT,
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
     ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
+    ATTRIBUTION,
     CONF_CACHE_DIR,
     CONF_FORECAST,
     CONF_YAML,
     COORDINATOR,
     DEFAULT_NAME,
+    DOMAIN,
     FORECAST_SENSOR_TYPE,
-    NAME,
     PRECIPITATION_AMOUNT,
     SENSOR_TYPES,
 )
-from .gismeteo import Gismeteo
+from .entity import GismeteoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,15 +79,29 @@ async def async_setup_platform(
             )
         )
 
-    uid = SENSOR_DOMAIN + config[CONF_NAME]
+    uid = "-".join([SENSOR_DOMAIN, config[CONF_NAME]])
     config[CONF_PLATFORM] = SENSOR_DOMAIN
     hass.data[DOMAIN][CONF_YAML][uid] = config
+
+
+def fix_kinds(kinds: List[str], warn=True) -> List[str]:
+    """Remove deprecated values from kinds."""
+    if "weather" in kinds:
+        if warn:
+            _LOGGER.warning(
+                'Deprecated condition "weather". Please replace it to "condition"'
+            )
+        kinds = set(kinds)
+        kinds.remove("weather")
+        kinds = list(kinds | {"condition"})
+
+    return kinds
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Add Gismeteo sensor entities."""
     entities = []
-    if config_entry.source == "import":
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
             if cfg[CONF_PLATFORM] != SENSOR_DOMAIN:
@@ -95,7 +110,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             name = cfg[CONF_NAME]
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-            for kind in cfg.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()):
+            for kind in fix_kinds(cfg[CONF_MONITORED_CONDITIONS]):
                 entities.append(GismeteoSensor(name, kind, coordinator))
 
             if cfg.get(CONF_FORECAST, True):
@@ -107,8 +122,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         name = config_entry.data[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
-        for kind in config_entry.data.get(
-            CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()
+        for kind in fix_kinds(
+            config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
+            warn=False,
         ):
             entities.append(GismeteoSensor(name, kind, coordinator))
 
@@ -119,7 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     async_add_entities(entities, False)
 
 
-class GismeteoSensor(CoordinatorEntity):
+class GismeteoSensor(GismeteoEntity):
     """Implementation of an Gismeteo sensor."""
 
     def __init__(
@@ -129,21 +145,10 @@ class GismeteoSensor(CoordinatorEntity):
         coordinator: GismeteoDataUpdateCoordinator,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator)
-
-        self._name = name
+        super().__init__(name, coordinator)
         self.kind = kind
         self._state = None
         self._unit_of_measurement = SENSOR_TYPES[self.kind][ATTR_UNIT_OF_MEASUREMENT]
-
-    @property
-    def _gismeteo(self) -> Gismeteo:
-        return self.coordinator.gismeteo
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_LABEL]}"
 
     @property
     def unique_id(self):
@@ -151,20 +156,16 @@ class GismeteoSensor(CoordinatorEntity):
         return f"{self._gismeteo.unique_id}-{self.kind}".lower()
 
     @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
-            "name": NAME,
-            "entry_type": "service",
-        }
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_NAME]}"
 
     @property
     def state(self):
         """Return the state."""
         data = self._gismeteo.current
         try:
-            if self.kind == "weather":
+            if self.kind == "condition":
                 self._state = self._gismeteo.condition()
             elif self.kind == "forecast":
                 self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
@@ -238,6 +239,6 @@ class GismeteoSensor(CoordinatorEntity):
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
-        return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
-        }
+        attrs = self._gismeteo.attributes.copy()
+        attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
+        return attrs

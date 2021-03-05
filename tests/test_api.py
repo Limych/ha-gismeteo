@@ -15,9 +15,15 @@ from unittest.mock import patch
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
+from homeassistant.const import ATTR_ID, ATTR_NAME, HTTP_OK
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
+from custom_components.gismeteo.api import (
+    ApiError,
+    GismeteoApiClient,
+    InvalidCoordinatesError,
+)
 from custom_components.gismeteo.const import (
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_PHENOMENON,
@@ -27,12 +33,6 @@ from custom_components.gismeteo.const import (
     CONDITION_FOG_CLASSES,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    HTTP_OK,
-)
-from custom_components.gismeteo.gismeteo import (
-    ApiError,
-    Gismeteo,
-    InvalidCoordinatesError,
 )
 
 LATITUDE = 52.0677904
@@ -50,18 +50,18 @@ async def test__valid_coordinates():
 
     for lat in lat_valid:
         for lon in lon_valid:
-            assert Gismeteo._valid_coordinates(lat, lon) is True
+            assert GismeteoApiClient._valid_coordinates(lat, lon) is True
         for lon in lon_invalid:
-            assert Gismeteo._valid_coordinates(lat, lon) is False
+            assert GismeteoApiClient._valid_coordinates(lat, lon) is False
     for lat in lat_invalid:
         for lon in lon_valid:
-            assert Gismeteo._valid_coordinates(lat, lon) is False
+            assert GismeteoApiClient._valid_coordinates(lat, lon) is False
         for lon in lon_invalid:
-            assert Gismeteo._valid_coordinates(lat, lon) is False
+            assert GismeteoApiClient._valid_coordinates(lat, lon) is False
 
     async with ClientSession() as client:
         with raises(InvalidCoordinatesError):
-            Gismeteo(client, latitude=lat_invalid[0], longitude=lon_invalid[0])
+            GismeteoApiClient(client, latitude=lat_invalid[0], longitude=lon_invalid[0])
 
 
 # pylint: disable=protected-access
@@ -69,12 +69,12 @@ def test__get():
     """Test _get service method."""
     data = {"qwe": 123, "asd": "sdf", "zxc": "789"}
 
-    assert Gismeteo._get(data, "qwe") == 123
-    assert Gismeteo._get(data, "asd") == "sdf"
-    assert Gismeteo._get(data, "asd", int) is None
-    assert Gismeteo._get(data, "zxc") == "789"
-    assert Gismeteo._get(data, "zxc") != 789
-    assert Gismeteo._get(data, "zxc", int) == 789
+    assert GismeteoApiClient._get(data, "qwe") == 123
+    assert GismeteoApiClient._get(data, "asd") == "sdf"
+    assert GismeteoApiClient._get(data, "asd", int) is None
+    assert GismeteoApiClient._get(data, "zxc") == "789"
+    assert GismeteoApiClient._get(data, "zxc") != 789
+    assert GismeteoApiClient._get(data, "zxc", int) == 789
 
 
 @patch("aiohttp.ClientSession.get")
@@ -87,7 +87,7 @@ async def test__async_get_data(mock_get):
     )
     #
     async with ClientSession() as client:
-        gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+        gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
         city_id = await gismeteo._async_get_data("some_url")
 
     assert city_id == "qwe"
@@ -95,7 +95,7 @@ async def test__async_get_data(mock_get):
     mock_get.return_value.__aenter__.return_value.status = 404
     #
     async with ClientSession() as client:
-        gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+        gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
         with raises(ApiError):
             await gismeteo._async_get_data("some_url")
 
@@ -103,35 +103,38 @@ async def test__async_get_data(mock_get):
 # pylint: disable=protected-access
 async def test_async_get_location():
     """Test with valid location data."""
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=load_fixture("location.xml"),
     ):
         async with ClientSession() as client:
-            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
 
-            assert gismeteo.location_key is None
+            assert gismeteo.attributes[ATTR_ID] is None
 
             await gismeteo.async_get_location()
 
-    assert gismeteo.location_key == 167413
-    assert gismeteo.location_name == "Razvilka"
+    assert gismeteo.attributes[ATTR_ID] == 167413
+    assert gismeteo.attributes[ATTR_NAME] == "Razvilka"
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=None,
     ):
         async with ClientSession() as client:
-            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
             with raises(ApiError):
                 await gismeteo.async_get_location()
 
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value="qwe",
     ):
         async with ClientSession() as client:
-            gismeteo = Gismeteo(client, latitude=LATITUDE, longitude=LONGITUDE)
+            gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
             with raises(ApiError):
                 await gismeteo.async_get_location()
 
@@ -139,13 +142,13 @@ async def test_async_get_location():
 # pylint: disable=protected-access
 def test__get_utime():
     """Test _get_utime service method."""
-    assert Gismeteo._get_utime("2021-02-21T16:00:00", 180) == 1613912400
-    assert Gismeteo._get_utime("2021-02-21T16:00:00", 0) == 1613923200
-    assert Gismeteo._get_utime("2021-02-21", 180) == 1613854800
-    assert Gismeteo._get_utime("2021-02-21", 0) == 1613865600
+    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 180) == 1613912400
+    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 0) == 1613923200
+    assert GismeteoApiClient._get_utime("2021-02-21", 180) == 1613854800
+    assert GismeteoApiClient._get_utime("2021-02-21", 0) == 1613865600
 
     with raises(ValueError):
-        Gismeteo._get_utime("2021-02-", 0)
+        GismeteoApiClient._get_utime("2021-02-", 0)
 
 
 # pylint: disable=protected-access
@@ -155,12 +158,13 @@ async def init_gismeteo(
     data: Any = False,
 ):
     """Prepare Gismeteo object."""
-    with patch(
-        "custom_components.gismeteo.gismeteo.Gismeteo._async_get_data",
+    with patch.object(
+        GismeteoApiClient,
+        "_async_get_data",
         return_value=data if data is not False else load_fixture("forecast.xml"),
     ):
         async with ClientSession() as client:
-            gismeteo = Gismeteo(
+            gismeteo = GismeteoApiClient(
                 client,
                 latitude=LATITUDE,
                 longitude=LONGITUDE,
@@ -353,7 +357,7 @@ async def test_forecast():
     """Test forecast."""
     with patch(
         "time.time",
-        return_value=Gismeteo._get_utime("2021-02-26", 0),
+        return_value=GismeteoApiClient._get_utime("2021-02-26", 0),
     ):
         gismeteo_d = await init_gismeteo(FORECAST_MODE_DAILY)
 

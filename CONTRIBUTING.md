@@ -7,6 +7,10 @@ Contributing to this project should be as easy and transparent as possible, whet
 - Submitting a fix
 - Proposing new features
 
+## IMPORTANT! Install development environment first
+
+When making changes in code, please use the existing development environment — this will save you from many errors and help create more convenient code to support. To install the environment, run the `./bin/setup` script.
+
 ## Github is used for everything
 
 Github is used to host code, to track issues and feature requests, as well as accept pull requests.
@@ -24,7 +28,7 @@ In short, when you submit code changes, your submissions are understood to be un
 
 ## Report bugs using Github's [issues](../../issues)
 
-GitHub issues are used to track public bugs.  
+GitHub issues are used to track public bugs.
 Report a bug by [opening a new issue](../../issues/new/choose); it's that easy!
 
 ## Write bug reports with detail, background, and sample code
@@ -44,6 +48,16 @@ People *love* thorough bug reports. I'm not even kidding.
 ## Use a Consistent Coding Style
 
 Use [black](https://github.com/ambv/black) to make sure the code follows the style.
+
+## Test your code modification
+
+This custom component is based on [integration blueprint template](https://github.com/Limych/ha-blueprint).
+
+It comes with development environment in a container, easy to launch
+if you use Visual Studio Code. With this container you will have a stand alone
+Home Assistant instance running and already configured with the included
+[`.devcontainer/configuration.yaml`](./.devcontainer/configuration.yaml)
+file.
 
 ## License
 

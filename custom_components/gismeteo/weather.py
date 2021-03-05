@@ -1,21 +1,18 @@
-#
-#  Copyright (c) 2019, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
 """
-The Gismeteo Weather Provider.
+The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
+
 import logging
 
-from homeassistant.components.weather import (
-    DOMAIN as WEATHER_DOMAIN,
-    PLATFORM_SCHEMA,
-    WeatherEntity,
-)
+import voluptuous as vol
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_API_KEY,
@@ -26,21 +23,21 @@ from homeassistant.const import (
     CONF_PLATFORM,
     TEMP_CELSIUS,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-import voluptuous as vol
 
-from . import ATTRIBUTION, DOMAIN, GismeteoDataUpdateCoordinator
+from . import GismeteoDataUpdateCoordinator
 from .const import (
+    ATTRIBUTION,
     CONF_CACHE_DIR,
     CONF_YAML,
     COORDINATOR,
     DEFAULT_NAME,
+    DOMAIN,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    NAME,
 )
-from .gismeteo import Gismeteo
+from .entity import GismeteoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +56,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 
 # pylint: disable=unused-argument
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(
+    hass: HomeAssistant, config, add_entities, discovery_info=None
+):
     """Set up the Gismeteo weather platform."""
     if CONF_YAML not in hass.data[DOMAIN]:
         hass.data[DOMAIN].setdefault(CONF_YAML, {})
@@ -74,10 +73,10 @@ async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
     """Add a Gismeteo weather entities."""
     entities = []
-    if config_entry.source == "import":
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
             if cfg[CONF_PLATFORM] != WEATHER_DOMAIN:
@@ -98,19 +97,18 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities, False)
 
 
-class GismeteoWeather(CoordinatorEntity, WeatherEntity):
+class GismeteoWeather(GismeteoEntity, WeatherEntity):
     """Implementation of an Gismeteo sensor."""
 
     def __init__(self, name: str, coordinator: GismeteoDataUpdateCoordinator):
         """Initialize."""
-        super().__init__(coordinator)
-
-        self._name = name
+        super().__init__(name, coordinator)
         self._attrs = {}
 
     @property
-    def _gismeteo(self) -> Gismeteo:
-        return self.coordinator.gismeteo
+    def unique_id(self):
+        """Return a unique_id for this entity."""
+        return self._gismeteo.unique_id
 
     @property
     def name(self):
@@ -121,20 +119,6 @@ class GismeteoWeather(CoordinatorEntity, WeatherEntity):
     def attribution(self):
         """Return the attribution."""
         return ATTRIBUTION
-
-    @property
-    def unique_id(self):
-        """Return a unique_id for this entity."""
-        return self._gismeteo.unique_id
-
-    @property
-    def device_info(self):
-        """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._gismeteo.location_key)},
-            "name": NAME,
-            "entry_type": "service",
-        }
 
     @property
     def condition(self):

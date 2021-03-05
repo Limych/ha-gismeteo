@@ -1,34 +1,33 @@
-#
 #  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
 """
 The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
+
 import asyncio
 import logging
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
 from homeassistant import config_entries
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_NAME
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
+from .api import ApiError
 from .const import (
     CONF_FORECAST,
     CONF_PLATFORMS,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
 )
-from .gismeteo import ApiError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,9 +44,8 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         Special type of import, we're not actually going to store any data.
         Instead, we're going to rely on the values that are in config file.
         """
-        for entry in self._async_current_entries():
-            if entry.source == "import":
-                return self.async_abort(reason="single_instance_allowed")
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
         return self.async_create_entry(title="configuration.yaml", data=platform_config)
 

@@ -1,8 +1,6 @@
-#
 #  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
 """
 The Gismeteo component.
 
@@ -11,14 +9,13 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import asyncio
-import json
 import logging
-import os
 
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_PLATFORM
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -26,50 +23,41 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import STORAGE_DIR
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .api import ApiError, GismeteoApiClient
 from .const import (
     CONF_CACHE_DIR,
     CONF_PLATFORMS,
     CONF_YAML,
     COORDINATOR,
+    DOMAIN,
     FORECAST_MODE_HOURLY,
+    PLATFORMS,
+    STARTUP_MESSAGE,
     UNDO_UPDATE_LISTENER,
     UPDATE_INTERVAL,
 )
-from .gismeteo import ApiError, Gismeteo
 
 _LOGGER = logging.getLogger(__name__)
-
-# Base component constants
-DOMAIN = "gismeteo"
-ATTRIBUTION = "Data provided by Gismeteo"
-
-PLATFORMS = [SENSOR_DOMAIN, WEATHER_DOMAIN]
 
 
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up component."""
     # Print startup messages
-    with open(os.path.dirname(os.path.abspath(__file__)) + "/manifest.json") as file:
-        manifest = json.load(file)
-    _LOGGER.info("%s v%s", manifest["name"], manifest["version"])
-    _LOGGER.info(
-        "If you have ANY issues with this component, please report them here: %s",
-        manifest["issue_tracker"],
-    )
-
     hass.data.setdefault(DOMAIN, {})
+    _LOGGER.info(STARTUP_MESSAGE)
 
+    # Clean up old imports from configuration.yaml
     for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.source == "import":
+        if entry.source == SOURCE_IMPORT:
             await hass.config_entries.async_remove(entry.entry_id)
 
     return True
 
 
-def get_gismeteo(hass: HomeAssistant, config):
+def get_gismeteo(hass: HomeAssistant, config) -> GismeteoApiClient:
     """Prepare Gismeteo instance."""
-    return Gismeteo(
+    return GismeteoApiClient(
         async_get_clientsession(hass),
         latitude=config.get(CONF_LATITUDE, hass.config.latitude),
         longitude=config.get(CONF_LONGITUDE, hass.config.longitude),
@@ -98,7 +86,7 @@ async def _async_get_coordinator(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     """Set up Gismeteo as config entry."""
-    if config_entry.source == "import":
+    if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         await asyncio.sleep(12)
 
@@ -136,7 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     return True
 
 
-async def async_unload_entry(hass, config_entry):
+async def async_unload_entry(hass: HomeAssistant, config_entry) -> bool:
     """Unload a config entry."""
     platforms = config_entry.data.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
 
@@ -157,7 +145,7 @@ async def async_unload_entry(hass, config_entry):
     return unload_ok
 
 
-async def update_listener(hass, config_entry):
+async def update_listener(hass: HomeAssistant, config_entry):
     """Update listener."""
     await hass.config_entries.async_reload(config_entry.entry_id)
 
@@ -165,10 +153,9 @@ async def update_listener(hass, config_entry):
 class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Gismeteo data API."""
 
-    def __init__(self, hass: HomeAssistant, gismeteo: Gismeteo):
+    def __init__(self, hass: HomeAssistant, gismeteo: GismeteoApiClient):
         """Initialize."""
         self.gismeteo = gismeteo
-
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
 
     async def _async_update_data(self):
@@ -176,8 +163,6 @@ class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             async with timeout(10):
                 await self.gismeteo.async_update()
-                current = self.gismeteo.current
+            return self.gismeteo.current
         except (ApiError, ClientConnectorError) as error:
             raise UpdateFailed(error) from error
-
-        return current

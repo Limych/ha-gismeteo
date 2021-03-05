@@ -1,4 +1,11 @@
 repos:
+  - repo: local
+    hooks:
+      - id: manifest
+        name: Update manifest.json
+        entry: bin/update_manifest
+        language: script
+        files: ^custom_components/.+/const\.py$
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.7.4
     hooks:
@@ -39,10 +46,12 @@ repos:
       - id: check-executables-have-shebangs
         stages: [manual]
       - id: check-json
+        files: ^(custom_components|tests)/.+\.json$
       - id: trailing-whitespace
-      - id: no-commit-to-branch
-        args:
-          - --branch=master
+# Uncomment below lines if you want to follow classical GitHub flow style development
+#      - id: no-commit-to-branch
+#        args:
+#          - --branch=master
   - repo: local
     hooks:
       # Run mypy through our wrapper script in order to get the possible
@@ -58,6 +67,6 @@ repos:
         files: ^custom_components/.+\.py$
       - id: pylint
         name: pylint
-        entry: python3 -m pylint.__main__
+        entry: bin/run-in-env pylint
         language: system
         types: [python]

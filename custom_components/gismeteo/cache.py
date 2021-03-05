@@ -1,7 +1,7 @@
 #  Copyright (c) 2018, Vladimir Maksimenko <vl.maksime@gmail.com>
 #  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #
-# Version 3.0
+# Version 3.0.1
 """Cache controller."""
 
 import logging
@@ -70,8 +70,7 @@ class Cache:
         file_path = self._get_file_path(file_name)
         _LOGGER.debug("Read cache file %s", file_path)
         if self.is_cached(file_name):
-            with open(file_path) as file:
-                content = file.read()
+            content = open(file_path).read()
         else:
             content = None
 
