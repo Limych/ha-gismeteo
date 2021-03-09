@@ -34,18 +34,19 @@ _Component to integrate with Gismeteo weather provider._
 ## Installation
 
 1. Click install.
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Gismeteo".
+1. _If you want to configure component via Home Assistant UI..._\
+    in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Gismeteo".
+1. _If you want to configure component via `configuration.yaml`..._\
+    follow instructions in [Documentation][component], then restart Home Assistant.
 
 {% endif %}
-## Configuration is done in the UI
+## Breaking Changes
 
-... or in `configuration.yaml` file (see documentation for examples).
+- Since version 2.2.0 forecast sensor has the name `... 3h Forecast` instead of `... Forecast`.
 
 ## Useful Links
 
 - [Documentation][component]
-- [Weather Provider Configuration](https://github.com/Limych/ha-gismeteo#weather-provider-configuration)
-- [Weather Sensors Configuration](https://github.com/Limych/ha-gismeteo#weather-sensors-configuration)
 - [Report a Bug][report_bug]
 - [Suggest an idea][suggest_idea]
 

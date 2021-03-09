@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "single_instance_allowed": "Already configured. Only a single configuration possible."
+            "no_mixed_config": "Already configured. Configuration via configuration.yaml are not compatible with configurations via UI."
         },
         "error": {
             "cannot_connect": "Failed to connect"
@@ -13,7 +13,8 @@
                     "latitude": "Latitude",
                     "longitude": "Longitude",
                     "name": "Name",
-                    "mode": "Forecast Mode"
+                    "mode": "Forecast Mode",
+                    "forecast": "Add 3h Forecast Sensor"
                 },
                 "description": "If you need help with the configuration have a look here: https://github.com/Limych/ha-gismeteo",
                 "title": "Gismeteo"

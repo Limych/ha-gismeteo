@@ -1,5 +1,5 @@
 # pylint: disable=protected-access,redefined-outer-name
-"""Test integration_blueprint config flow."""
+"""Test gismeteo config flow."""
 
 from unittest.mock import patch
 
@@ -12,11 +12,8 @@ import pytest
 @pytest.fixture(autouse=True)
 def bypass_setup_fixture():
     """Prevent setup."""
-    with patch(
-        "custom_components.integration_blueprint.async_setup",
-        return_value=True,
-    ), patch(
-        "custom_components.integration_blueprint.async_setup_entry",
+    with patch("custom_components.gismeteo.async_setup", return_value=True,), patch(
+        "custom_components.gismeteo.async_setup_entry",
         return_value=True,
     ):
         yield

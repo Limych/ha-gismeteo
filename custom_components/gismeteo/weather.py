@@ -11,7 +11,6 @@ https://github.com/Limych/ha-gismeteo/
 import logging
 
 import voluptuous as vol
-from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
@@ -36,6 +35,7 @@ from .const import (
     DOMAIN,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
+    WEATHER,
 )
 from .entity import GismeteoEntity
 
@@ -68,8 +68,8 @@ async def async_setup_platform(
             )
         )
 
-    uid = WEATHER_DOMAIN + config[CONF_NAME]
-    config[CONF_PLATFORM] = WEATHER_DOMAIN
+    uid = WEATHER + config[CONF_NAME]
+    config[CONF_PLATFORM] = WEATHER
     hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
@@ -79,7 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            if cfg[CONF_PLATFORM] != WEATHER_DOMAIN:
+            if cfg[CONF_PLATFORM] != WEATHER:
                 continue  # pragma: no cover
 
             name = cfg[CONF_NAME]
@@ -89,7 +89,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     else:
         # Setup from config entry
-        name = config_entry.data[CONF_NAME]
+        config = config_entry.data.copy()  # type: dict
+        config.update(config_entry.options)
+
+        name = config[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
         entities.append(GismeteoWeather(name, coordinator))

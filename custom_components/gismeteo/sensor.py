@@ -12,7 +12,6 @@ import logging
 from typing import List
 
 import voluptuous as vol
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT
@@ -47,6 +46,7 @@ from .const import (
     DOMAIN,
     FORECAST_SENSOR_TYPE,
     PRECIPITATION_AMOUNT,
+    SENSOR,
     SENSOR_TYPES,
 )
 from .entity import GismeteoEntity
@@ -79,8 +79,8 @@ async def async_setup_platform(
             )
         )
 
-    uid = "-".join([SENSOR_DOMAIN, config[CONF_NAME]])
-    config[CONF_PLATFORM] = SENSOR_DOMAIN
+    uid = "-".join([SENSOR, config[CONF_NAME]])
+    config[CONF_PLATFORM] = SENSOR
     hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
@@ -104,7 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            if cfg[CONF_PLATFORM] != SENSOR_DOMAIN:
+            if cfg[CONF_PLATFORM] != SENSOR:
                 continue  # pragma: no cover
 
             name = cfg[CONF_NAME]
@@ -119,16 +119,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
     else:
         # Setup from config entry
-        name = config_entry.data[CONF_NAME]
+        config = config_entry.data.copy()  # type: dict
+        config.update(config_entry.options)
+
+        name = config[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
         for kind in fix_kinds(
-            config_entry.data.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
+            config.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
             warn=False,
         ):
             entities.append(GismeteoSensor(name, kind, coordinator))
 
-        if config_entry.data.get(CONF_FORECAST, True):
+        if config.get(CONF_FORECAST, True):
             SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
             entities.append(GismeteoSensor(name, "forecast", coordinator))
 

@@ -107,9 +107,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
 
     else:
         # Setup from config entry
-        platforms = config_entry.data.get(CONF_PLATFORMS, PLATFORMS)
+        config = config_entry.data.copy()  # type: dict
+        config.update(config_entry.options)
 
-        coordinator = await _async_get_coordinator(hass, config_entry.data)
+        platforms = [x for x in PLATFORMS if config.get(f"{CONF_PLATFORM}_{x}", True)]
+
+        coordinator = await _async_get_coordinator(hass, config)
         undo_listener = config_entry.add_update_listener(update_listener)
         hass.data[DOMAIN][config_entry.entry_id] = {
             COORDINATOR: coordinator,

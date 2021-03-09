@@ -48,6 +48,12 @@ I also suggest you [visit the support topic][forum] on the community forum.
 1. _If you want to configure component via `configuration.yaml`..._\
     follow instructions below, then restart Home Assistant.
 
+## Breaking Changes
+
+- Since version 2.2.0 forecast sensor has the name `... 3h Forecast` instead of `... Forecast`.
+
+## Configuration variables
+
 ### Weather Provider Configuration
 
 The `gismeteo` weather platform uses [Gismeteo](https://www.gismeteo.ru/) as a source for current meteorological data for a specified location.

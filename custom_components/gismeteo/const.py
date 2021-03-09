@@ -36,9 +36,9 @@ except ImportError:  # pragma: no cover
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.1.2.dev0"
+VERSION = "2.2.0.dev0"
 ATTRIBUTION = "Data provided by Gismeteo"
-ISSUE_URL = "https://github.com/Limych/ha-blueprint/issues"
+ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 
 STARTUP_MESSAGE = f"""
 -------------------------------------------------------------------
@@ -240,7 +240,7 @@ SENSOR_TYPES = {
 FORECAST_SENSOR_TYPE = {
     ATTR_DEVICE_CLASS: None,
     ATTR_ICON: None,
-    ATTR_NAME: "Forecast",
+    ATTR_NAME: "3h Forecast",
     ATTR_UNIT_OF_MEASUREMENT: None,
 }
 

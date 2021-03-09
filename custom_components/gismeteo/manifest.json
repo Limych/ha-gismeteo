@@ -1,9 +1,9 @@
 {
     "domain": "gismeteo",
     "name": "Gismeteo",
-    "version": "2.1.2.dev0",
+    "version": "2.2.0.dev0",
     "documentation": "https://github.com/Limych/ha-gismeteo",
-    "issue_tracker": "https://github.com/Limych/ha-blueprint/issues",
+    "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
     "dependencies": [
         "weather"
     ],
