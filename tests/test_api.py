@@ -170,6 +170,9 @@ async def init_gismeteo(
                 longitude=LONGITUDE,
                 location_key=location_key,
                 mode=mode,
+                params={
+                    "timezone": "UTC",
+                },
             )
 
             assert gismeteo.current == {}
@@ -363,7 +366,7 @@ async def test_forecast():
 
         assert gismeteo_d.forecast() == [
             {
-                "datetime": "2021-02-25T13:00:00-08:00",
+                "datetime": "2021-02-25T21:00:00+00:00",
                 "condition": "rainy",
                 "temperature": 4.0,
                 "pressure": 0.0,
@@ -374,7 +377,7 @@ async def test_forecast():
                 "templow": 2,
             },
             {
-                "datetime": "2021-02-26T13:00:00-08:00",
+                "datetime": "2021-02-26T21:00:00+00:00",
                 "condition": "cloudy",
                 "temperature": 2.0,
                 "pressure": 0.0,
