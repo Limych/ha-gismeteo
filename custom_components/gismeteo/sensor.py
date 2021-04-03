@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
-from homeassistant.config_entries import SOURCE_IMPORT
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
@@ -86,22 +86,51 @@ async def async_setup_platform(
 
 def fix_kinds(kinds: List[str], warn=True) -> List[str]:
     """Remove unwanted values from kinds."""
-    if "forecast" in kinds:
-        kinds.remove("forecast")
+    kinds = set(kinds)
 
-    if "weather" in kinds:
-        if warn:
-            _LOGGER.warning(
-                'Deprecated condition "weather". Please replace it to "condition"'
-            )
-        kinds = set(kinds)
-        kinds.remove("weather")
-        kinds = list(kinds | {"condition"})
+    for k in ["forecast", "pressure_mmhg", "weather"]:
+        if k in kinds:
+            kinds.remove(k)
 
+            if k == "weather":
+                kinds = kinds | {"condition"}
+                if warn:
+                    _LOGGER.warning(
+                        'Deprecated condition "weather". Please replace it to "condition"'
+                    )
+
+    kinds = list(kinds)
+    kinds.sort()
     return kinds
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
+def _gen_entities(
+    location_name: str,
+    coordinator: GismeteoDataUpdateCoordinator,
+    config: dict,
+    warn: bool,
+):
+    """Generate entities."""
+    entities = []
+
+    for k in fix_kinds(
+        config.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
+        warn=warn,
+    ):
+        entities.append(GismeteoSensor(location_name, k, coordinator))
+        if k == "pressure":
+            entities.append(GismeteoSensor(location_name, "pressure_mmhg", coordinator))
+
+    if config.get(CONF_FORECAST, False):
+        SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
+        entities.append(GismeteoSensor(location_name, "forecast", coordinator))
+
+    return entities
+
+
+async def async_setup_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
+):
     """Add Gismeteo sensor entities."""
     entities = []
     if config_entry.source == SOURCE_IMPORT:
@@ -110,33 +139,34 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             if cfg[CONF_PLATFORM] != SENSOR:
                 continue  # pragma: no cover
 
-            name = cfg[CONF_NAME]
+            location_name = cfg[CONF_NAME]
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-            for kind in fix_kinds(cfg[CONF_MONITORED_CONDITIONS]):
-                entities.append(GismeteoSensor(name, kind, coordinator))
-
-            if cfg.get(CONF_FORECAST, True):
-                SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-                entities.append(GismeteoSensor(name, "forecast", coordinator))
+            entities.extend(
+                _gen_entities(
+                    location_name,
+                    coordinator,
+                    cfg,
+                    True,
+                )
+            )
 
     else:
         # Setup from config entry
         config = config_entry.data.copy()  # type: dict
         config.update(config_entry.options)
 
-        name = config[CONF_NAME]
+        location_name = config[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
-        for kind in fix_kinds(
-            config.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
-            warn=False,
-        ):
-            entities.append(GismeteoSensor(name, kind, coordinator))
-
-        if config.get(CONF_FORECAST, True):
-            SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-            entities.append(GismeteoSensor(name, "forecast", coordinator))
+        entities.extend(
+            _gen_entities(
+                location_name,
+                coordinator,
+                config,
+                False,
+            )
+        )
 
     async_add_entities(entities, False)
 
@@ -146,48 +176,51 @@ class GismeteoSensor(GismeteoEntity):
 
     def __init__(
         self,
-        name: str,
+        location_name: str,
         kind: str,
         coordinator: GismeteoDataUpdateCoordinator,
     ):
         """Initialize the sensor."""
-        super().__init__(name, coordinator)
-        self.kind = kind
+        super().__init__(location_name, coordinator)
+        self._kind = kind
+        self._unit_of_measurement = SENSOR_TYPES[self._kind][ATTR_UNIT_OF_MEASUREMENT]
+
         self._state = None
-        self._unit_of_measurement = SENSOR_TYPES[self.kind][ATTR_UNIT_OF_MEASUREMENT]
 
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return f"{self._gismeteo.unique_id}-{self.kind}".lower()
+        return f"{self._gismeteo.unique_id}-{self._kind}".lower()
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{self._name} {SENSOR_TYPES[self.kind][ATTR_NAME]}"
+        return f"{self._location_name} {SENSOR_TYPES[self._kind][ATTR_NAME]}"
 
     @property
     def state(self):
         """Return the state."""
         data = self._gismeteo.current
         try:
-            if self.kind == "condition":
+            if self._kind == "condition":
                 self._state = self._gismeteo.condition()
-            elif self.kind == "forecast":
+            elif self._kind == "forecast":
                 self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
-            elif self.kind == "temperature":
+            elif self._kind == "temperature":
                 self._state = self._gismeteo.temperature()
-            elif self.kind == "wind_speed":
+            elif self._kind == "wind_speed":
                 self._state = self._gismeteo.wind_speed_ms()
-            elif self.kind == "wind_bearing":
+            elif self._kind == "wind_bearing":
                 self._state = self._gismeteo.wind_bearing()
-            elif self.kind == "humidity":
+            elif self._kind == "humidity":
                 self._state = self._gismeteo.humidity()
-            elif self.kind == "pressure":
+            elif self._kind == "pressure":
                 self._state = self._gismeteo.pressure_hpa()
-            elif self.kind == "clouds":
+            elif self._kind == "pressure_mmhg":
+                self._state = self._gismeteo.pressure_mmhg()
+            elif self._kind == "clouds":
                 self._state = int(data.get(ATTR_WEATHER_CLOUDINESS) * 33.33)
-            elif self.kind == "rain":
+            elif self._kind == "rain":
                 self._state = (
                     (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
@@ -198,10 +231,7 @@ class GismeteoSensor(GismeteoEntity):
                     if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [1, 3]
                     else 0
                 )
-                self._unit_of_measurement = SENSOR_TYPES[self.kind][
-                    ATTR_UNIT_OF_MEASUREMENT
-                ]
-            elif self.kind == "snow":
+            elif self._kind == "snow":
                 self._state = (
                     (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
@@ -212,18 +242,15 @@ class GismeteoSensor(GismeteoEntity):
                     if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [2, 3]
                     else 0
                 )
-                self._unit_of_measurement = SENSOR_TYPES[self.kind][
-                    ATTR_UNIT_OF_MEASUREMENT
-                ]
-            elif self.kind == "storm":
+            elif self._kind == "storm":
                 self._state = data.get(ATTR_WEATHER_STORM)
-            elif self.kind == "geomagnetic":
+            elif self._kind == "geomagnetic":
                 self._state = data.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
-            elif self.kind == "water_temperature":
+            elif self._kind == "water_temperature":
                 self._state = self._gismeteo.water_temperature()
         except KeyError:  # pragma: no cover
             self._state = None
-            _LOGGER.warning("Condition is currently not available: %s", self.kind)
+            _LOGGER.warning("Condition is currently not available: %s", self._kind)
 
         return self._state
 
@@ -235,12 +262,12 @@ class GismeteoSensor(GismeteoEntity):
     @property
     def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
-        return SENSOR_TYPES[self.kind][ATTR_ICON]
+        return SENSOR_TYPES[self._kind][ATTR_ICON]
 
     @property
     def device_class(self) -> Optional[str]:
         """Return the device_class."""
-        return SENSOR_TYPES[self.kind][ATTR_DEVICE_CLASS]
+        return SENSOR_TYPES[self._kind][ATTR_DEVICE_CLASS]
 
     @property
     def device_state_attributes(self) -> Optional[Dict[str, Any]]:

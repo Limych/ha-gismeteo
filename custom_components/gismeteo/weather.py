@@ -103,9 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 class GismeteoWeather(GismeteoEntity, WeatherEntity):
     """Implementation of an Gismeteo sensor."""
 
-    def __init__(self, name: str, coordinator: GismeteoDataUpdateCoordinator):
+    def __init__(self, location_name: str, coordinator: GismeteoDataUpdateCoordinator):
         """Initialize."""
-        super().__init__(name, coordinator)
+        super().__init__(location_name, coordinator)
         self._attrs = {}
 
     @property
@@ -116,7 +116,7 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
     @property
     def name(self):
         """Return the name."""
-        return self._name
+        return self._location_name
 
     @property
     def attribution(self):

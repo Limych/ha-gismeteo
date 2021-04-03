@@ -147,6 +147,12 @@ SENSOR_TYPES = {
         ATTR_NAME: "Pressure",
         ATTR_UNIT_OF_MEASUREMENT: PRESSURE_HPA,
     },
+    "pressure_mmhg": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_ICON: None,
+        ATTR_NAME: "Pressure mmHg",
+        ATTR_UNIT_OF_MEASUREMENT: "mmHg",
+    },
     "wind_speed": {
         ATTR_DEVICE_CLASS: None,
         ATTR_ICON: "mdi:weather-windy",

@@ -19,7 +19,35 @@ from custom_components.gismeteo.const import (
     DOMAIN,
     SENSOR_TYPES,
 )
-from custom_components.gismeteo.sensor import GismeteoSensor
+from custom_components.gismeteo.sensor import GismeteoSensor, fix_kinds
+
+
+async def test_fix_kinds(caplog):
+    """Test fix_kinds function."""
+    caplog.clear()
+    res = fix_kinds([])
+    assert res == []
+    assert len(caplog.records) == 0
+
+    caplog.clear()
+    res = fix_kinds(["qwe", "asd"])
+    assert res == ["asd", "qwe"]
+    assert len(caplog.records) == 0
+
+    caplog.clear()
+    res = fix_kinds(["qwe", "asd", "pressure", "forecast", "pressure_mmhg"])
+    assert res == ["asd", "pressure", "qwe"]
+    assert len(caplog.records) == 0
+
+    caplog.clear()
+    res = fix_kinds(["qwe", "asd", "weather"])
+    assert res == ["asd", "condition", "qwe"]
+    assert len(caplog.records) == 1
+
+    caplog.clear()
+    res = fix_kinds(["qwe", "asd", "weather"], False)
+    assert res == ["asd", "condition", "qwe"]
+    assert len(caplog.records) == 0
 
 
 async def test_sensor_initialization(hass: HomeAssistant):

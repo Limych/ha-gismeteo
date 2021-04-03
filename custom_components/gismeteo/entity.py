@@ -19,10 +19,10 @@ from .const import DOMAIN, NAME
 class GismeteoEntity(CoordinatorEntity):
     """Gismeteo entity."""
 
-    def __init__(self, name: str, coordinator: GismeteoDataUpdateCoordinator):
+    def __init__(self, location_name: str, coordinator: GismeteoDataUpdateCoordinator):
         """Class initialization."""
         super().__init__(coordinator)
-        self._name = name
+        self._location_name = location_name
 
     @property
     def _gismeteo(self) -> GismeteoApiClient:

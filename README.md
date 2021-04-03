@@ -155,6 +155,7 @@ I put a lot of work into making this repo and component available and updated to
 >
 > **pressure**\
 >   The sea-level air pressure in millibars.
+>   At the same time, a second sensor is created, indicating the same pressure in mmHg.
 >
 > **wind_speed**\
 >   The wind speed.

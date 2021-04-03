@@ -21,7 +21,7 @@ _Component to integrate with Gismeteo weather provider._
 - Sensors of current weather:
   - air temperature,
   - air relative humidity,
-  - air pressure,
+  - air pressure (in millibars and mmHg),
   - wind bearing and speed,
   - cloud coverage,
   - rain and snow volume,
