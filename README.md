@@ -229,10 +229,10 @@ See separate [license file](LICENSE.md) for full text.
 
 [component]: https://github.com/Limych/ha-gismeteo
 [commits-shield]: https://img.shields.io/github/commit-activity/y/Limych/ha-gismeteo.svg?style=popout
-[commits]: https://github.com/Limych/ha-gismeteo/commits/master
+[commits]: https://github.com/Limych/ha-gismeteo/commits/dev
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
-[exampleimg]: https://github.com/Limych/ha-gismeteo/raw/master/gismeteo_logo.jpg
+[exampleimg]: https://github.com/Limych/ha-gismeteo/raw/dev/gismeteo_logo.jpg
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/t/gismeteo-weather-provider/109668
 [license]: https://github.com/Limych/ha-gismeteo/blob/main/LICENSE.md

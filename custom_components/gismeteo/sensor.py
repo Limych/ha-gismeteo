@@ -9,7 +9,7 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -188,33 +188,33 @@ class GismeteoSensor(GismeteoEntity):
             elif self.kind == "clouds":
                 self._state = int(data.get(ATTR_WEATHER_CLOUDINESS) * 33.33)
             elif self.kind == "rain":
-                if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [1, 3]:
-                    self._state = (
+                self._state = (
+                    (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
                         or PRECIPITATION_AMOUNT[
                             data.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)
                         ]
                     )
-                    self._unit_of_measurement = SENSOR_TYPES[self.kind][
-                        ATTR_UNIT_OF_MEASUREMENT
-                    ]
-                else:
-                    self._state = "not raining"
-                    self._unit_of_measurement = ""
+                    if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [1, 3]
+                    else 0
+                )
+                self._unit_of_measurement = SENSOR_TYPES[self.kind][
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
             elif self.kind == "snow":
-                if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [2, 3]:
-                    self._state = (
+                self._state = (
+                    (
                         data.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
                         or PRECIPITATION_AMOUNT[
                             data.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)
                         ]
                     )
-                    self._unit_of_measurement = SENSOR_TYPES[self.kind][
-                        ATTR_UNIT_OF_MEASUREMENT
-                    ]
-                else:
-                    self._state = "not snowing"
-                    self._unit_of_measurement = ""
+                    if data.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [2, 3]
+                    else 0
+                )
+                self._unit_of_measurement = SENSOR_TYPES[self.kind][
+                    ATTR_UNIT_OF_MEASUREMENT
+                ]
             elif self.kind == "storm":
                 self._state = data.get(ATTR_WEATHER_STORM)
             elif self.kind == "geomagnetic":
@@ -228,22 +228,22 @@ class GismeteoSensor(GismeteoEntity):
         return self._state
 
     @property
-    def unit_of_measurement(self):
+    def unit_of_measurement(self) -> Optional[str]:
         """Return the unit of measurement of this entity, if any."""
         return self._unit_of_measurement
 
     @property
-    def icon(self):
+    def icon(self) -> Optional[str]:
         """Return the icon to use in the frontend, if any."""
         return SENSOR_TYPES[self.kind][ATTR_ICON]
 
     @property
-    def device_class(self):
+    def device_class(self) -> Optional[str]:
         """Return the device_class."""
         return SENSOR_TYPES[self.kind][ATTR_DEVICE_CLASS]
 
     @property
-    def device_state_attributes(self):
+    def device_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return the state attributes."""
         attrs = self._gismeteo.attributes.copy()
         attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
