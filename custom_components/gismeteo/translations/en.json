@@ -12,9 +12,7 @@
                     "api_key": "API Key",
                     "latitude": "Latitude",
                     "longitude": "Longitude",
-                    "name": "Name",
-                    "mode": "Forecast Mode",
-                    "forecast": "Add 3h Forecast Sensor"
+                    "name": "Name"
                 },
                 "description": "If you need help with the configuration have a look here: https://github.com/Limych/ha-gismeteo",
                 "title": "Gismeteo"
@@ -25,9 +23,11 @@
         "step": {
             "user": {
                 "data": {
-                    "forecast": "Weather forecast"
+                    "platform_sensor": "Sensor entities enabled",
+                    "platform_weather": "Weather entity enabled",
+                    "mode": "Forecast Mode",
+                    "forecast": "Add 3h Forecast Sensor"
                 },
-                "description": "Due to the limitations of the free version of the Gismeteo API key, when you enable weather forecast, data updates will be performed every 80 minutes instead of every 40 minutes.",
                 "title": "Gismeteo Options"
             }
         }

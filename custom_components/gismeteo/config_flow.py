@@ -16,8 +16,6 @@ import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
 from homeassistant import config_entries
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_LATITUDE,
@@ -30,13 +28,7 @@ from homeassistant.core import callback
 
 from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
 from .api import ApiError
-from .const import (
-    CONF_FORECAST,
-    CONF_PLATFORMS,
-    FORECAST_MODE_DAILY,
-    FORECAST_MODE_HOURLY,
-    PLATFORMS,
-)
+from .const import CONF_FORECAST, FORECAST_MODE_DAILY, FORECAST_MODE_HOURLY, PLATFORMS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,9 +63,6 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._errors = {}
 
         if user_input is not None:
-            platforms = user_input.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
-            user_input[CONF_PLATFORMS] = platforms
-
             try:
                 async with timeout(10):
                     gismeteo = get_gismeteo(self.hass, user_input)
@@ -99,6 +88,10 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Optional(
+                        CONF_NAME,
+                        default=config.get(CONF_NAME, self.hass.config.location_name),
+                    ): str,
+                    vol.Optional(
                         CONF_LATITUDE,
                         default=config.get(CONF_LATITUDE, self.hass.config.latitude),
                     ): cv.latitude,
@@ -106,10 +99,6 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_LONGITUDE,
                         default=config.get(CONF_LONGITUDE, self.hass.config.longitude),
                     ): cv.longitude,
-                    vol.Optional(
-                        CONF_NAME,
-                        default=config.get(CONF_NAME, self.hass.config.location_name),
-                    ): str,
                 }
             ),
             errors=self._errors,
@@ -140,31 +129,26 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
             self.options.update(user_input)
             return await self._update_options()
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        f"{CONF_PLATFORM}_{x}",
-                        default=self.options.get(f"{CONF_PLATFORM}_{x}", True),
-                    ): bool
-                    for x in sorted(PLATFORMS)
-                }
-            ).extend(
-                vol.Schema(
-                    {
-                        vol.Required(
-                            CONF_MODE,
-                            default=user_input.get(CONF_MODE, FORECAST_MODE_HOURLY),
-                        ): vol.In([FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]),
-                        vol.Required(
-                            CONF_FORECAST,
-                            default=user_input.get(CONF_FORECAST, False),
-                        ): bool,
-                    }
-                )
-            ),
+        schema = {
+            vol.Required(
+                f"{CONF_PLATFORM}_{x}",
+                default=self.options.get(f"{CONF_PLATFORM}_{x}", True),
+            ): bool
+            for x in sorted(PLATFORMS)
+        }
+        schema.update(
+            {
+                vol.Required(
+                    CONF_MODE,
+                    default=self.options.get(CONF_MODE, FORECAST_MODE_HOURLY),
+                ): vol.In([FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]),
+                vol.Required(
+                    CONF_FORECAST,
+                    default=self.options.get(CONF_FORECAST, False),
+                ): bool,
+            }
         )
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(schema))
 
     async def _update_options(self):
         """Update config entry options."""

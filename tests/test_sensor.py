@@ -65,6 +65,6 @@ async def test_async_setup_platform(hass: HomeAssistant, gismeteo_api):
     assert state is not None
     assert state.state == "snowy"
 
-    state = hass.states.get(f"{SENSOR_DOMAIN}.office_forecast")
+    state = hass.states.get(f"{SENSOR_DOMAIN}.office_3h_forecast")
     assert state is not None
     assert state.state == "clear-night"

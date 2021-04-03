@@ -361,10 +361,9 @@ async def test_forecast():
     ):
         gismeteo_d = await init_gismeteo(FORECAST_MODE_DAILY)
 
-        print(gismeteo_d.forecast())
         assert gismeteo_d.forecast() == [
             {
-                "datetime": "2021-02-25T21:00:00+00:00",
+                "datetime": "2021-02-25T13:00:00-08:00",
                 "condition": "rainy",
                 "temperature": 4.0,
                 "pressure": 0.0,
@@ -375,7 +374,7 @@ async def test_forecast():
                 "templow": 2,
             },
             {
-                "datetime": "2021-02-26T21:00:00+00:00",
+                "datetime": "2021-02-26T13:00:00-08:00",
                 "condition": "cloudy",
                 "temperature": 2.0,
                 "pressure": 0.0,

@@ -85,7 +85,10 @@ async def async_setup_platform(
 
 
 def fix_kinds(kinds: List[str], warn=True) -> List[str]:
-    """Remove deprecated values from kinds."""
+    """Remove unwanted values from kinds."""
+    if "forecast" in kinds:
+        kinds.remove("forecast")
+
     if "weather" in kinds:
         if warn:
             _LOGGER.warning(
