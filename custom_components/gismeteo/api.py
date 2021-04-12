@@ -9,6 +9,7 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
+import math
 import time
 import xml.etree.ElementTree as etree  # type: ignore
 from datetime import datetime
@@ -77,7 +78,6 @@ from .const import (
     ENDPOINT_URL,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
-    HTTP_HEADERS,
     MMHG2HPA,
     MS2KMH,
 )
@@ -179,7 +179,7 @@ class GismeteoApiClient:
                 _LOGGER.debug("Cached response used")
                 return self._cache.read_cache(cache_fname)
 
-        async with self._session.get(url, headers=HTTP_HEADERS) as resp:
+        async with self._session.get(url) as resp:
             if resp.status != HTTP_OK:
                 raise ApiError(f"Invalid response from Gismeteo API: {resp.status}")
             _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
@@ -286,6 +286,18 @@ class GismeteoApiClient:
         src = src or self._current
         temperature = src.get(ATTR_WEATHER_TEMPERATURE)
         return float(temperature) if temperature is not None else STATE_UNKNOWN
+
+    def temperature_feeling(self, src=None):
+        """Return the current temperature feeling."""
+        temp = self.temperature(src)
+        humi = self.humidity(src)
+        wind = self.wind_speed_ms(src)
+        if STATE_UNKNOWN in (temp, humi, wind):
+            return STATE_UNKNOWN
+
+        e_value = humi * 0.06105 * math.exp((17.27 * temp) / (237.7 + temp))
+        feeling = temp + 0.348 * e_value - 0.7 * wind - 4.25
+        return round(feeling, 1)
 
     def water_temperature(self, src=None):
         """Return the current temperature of water."""

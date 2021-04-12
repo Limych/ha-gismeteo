@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.2.0"
+VERSION = "2.2.1.dev0"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 
@@ -135,6 +135,12 @@ SENSOR_TYPES = {
         ATTR_NAME: "Temperature",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
+    "temperature_feeling": {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_ICON: None,
+        ATTR_NAME: "Temperature Feeling",
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+    },
     "humidity": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
         ATTR_ICON: None,
@@ -208,8 +214,6 @@ FORECAST_SENSOR_TYPE = {
     ATTR_NAME: "3h Forecast",
     ATTR_UNIT_OF_MEASUREMENT: None,
 }
-
-HTTP_HEADERS: dict = {"Content-Encoding": "gzip"}
 
 COORDINATOR = "coordinator"
 UNDO_UPDATE_LISTENER = "undo_update_listener"

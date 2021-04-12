@@ -1,8 +1,9 @@
-#
+# pylint: disable=protected-access
+
 #  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-#
+
 """
 Tests for the Gismeteo component.
 
@@ -40,7 +41,6 @@ LONGITUDE = 19.4795644
 LOCATION_KEY = 3546
 
 
-# pylint: disable=protected-access
 async def test__valid_coordinates():
     """Test with valid and invalid location data."""
     lat_valid = (0, 15, 90, -32, -90, LATITUDE)
@@ -64,7 +64,6 @@ async def test__valid_coordinates():
             GismeteoApiClient(client, latitude=lat_invalid[0], longitude=lon_invalid[0])
 
 
-# pylint: disable=protected-access
 def test__get():
     """Test _get service method."""
     data = {"qwe": 123, "asd": "sdf", "zxc": "789"}
@@ -78,7 +77,6 @@ def test__get():
 
 
 @patch("aiohttp.ClientSession.get")
-# pylint: disable=protected-access
 async def test__async_get_data(mock_get):
     """Test with valid location data."""
     mock_get.return_value.__aenter__.return_value.status = HTTP_OK
@@ -100,7 +98,6 @@ async def test__async_get_data(mock_get):
             await gismeteo._async_get_data("some_url")
 
 
-# pylint: disable=protected-access
 async def test_async_get_location():
     """Test with valid location data."""
     with patch.object(
@@ -139,7 +136,6 @@ async def test_async_get_location():
                 await gismeteo.async_get_location()
 
 
-# pylint: disable=protected-access
 def test__get_utime():
     """Test _get_utime service method."""
     assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 180) == 1613912400
@@ -151,7 +147,6 @@ def test__get_utime():
         GismeteoApiClient._get_utime("2021-02-", 0)
 
 
-# pylint: disable=protected-access
 async def init_gismeteo(
     mode=FORECAST_MODE_HOURLY,
     location_key: Optional[int] = LOCATION_KEY,
@@ -290,6 +285,14 @@ async def test_temperature():
 
     assert gismeteo.temperature() == -7.0
     assert gismeteo.temperature(gismeteo.current) == -7.0
+
+
+async def test_temperature_feeling():
+    """Test current temperature feeling."""
+    gismeteo = await init_gismeteo()
+
+    assert gismeteo.temperature_feeling() == -12.3
+    assert gismeteo.temperature_feeling(gismeteo.current) == -12.3
 
 
 async def test_water_temperature():

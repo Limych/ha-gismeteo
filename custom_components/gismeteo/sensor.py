@@ -208,6 +208,8 @@ class GismeteoSensor(GismeteoEntity):
                 self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
             elif self._kind == "temperature":
                 self._state = self._gismeteo.temperature()
+            elif self._kind == "temperature_feeling":
+                self._state = self._gismeteo.temperature_feeling()
             elif self._kind == "wind_speed":
                 self._state = self._gismeteo.wind_speed_ms()
             elif self._kind == "wind_bearing":
@@ -219,7 +221,7 @@ class GismeteoSensor(GismeteoEntity):
             elif self._kind == "pressure_mmhg":
                 self._state = self._gismeteo.pressure_mmhg()
             elif self._kind == "clouds":
-                self._state = int(data.get(ATTR_WEATHER_CLOUDINESS) * 33.33)
+                self._state = int(data.get(ATTR_WEATHER_CLOUDINESS) * 100 / 3)
             elif self._kind == "rain":
                 self._state = (
                     (
@@ -248,6 +250,7 @@ class GismeteoSensor(GismeteoEntity):
                 self._state = data.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
             elif self._kind == "water_temperature":
                 self._state = self._gismeteo.water_temperature()
+
         except KeyError:  # pragma: no cover
             self._state = None
             _LOGGER.warning("Condition is currently not available: %s", self._kind)

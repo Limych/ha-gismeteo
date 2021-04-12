@@ -12,6 +12,7 @@ logger:
 #  - platform: gismeteo
 #    monitored_conditions:
 #      - temperature
+#      - temperature_feeling
 #
 #weather:
 #  - platform: gismeteo
