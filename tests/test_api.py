@@ -287,12 +287,12 @@ async def test_temperature():
     assert gismeteo.temperature(gismeteo.current) == -7.0
 
 
-async def test_temperature_feeling():
+async def test_temperature_feels_like():
     """Test current temperature feeling."""
     gismeteo = await init_gismeteo()
 
-    assert gismeteo.temperature_feeling() == -12.3
-    assert gismeteo.temperature_feeling(gismeteo.current) == -12.3
+    assert gismeteo.temperature_feels_like() == -12.3
+    assert gismeteo.temperature_feels_like(gismeteo.current) == -12.3
 
 
 async def test_water_temperature():

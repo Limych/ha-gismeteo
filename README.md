@@ -150,7 +150,7 @@ I put a lot of work into making this repo and component available and updated to
 > **temperature**\
 >   The current temperature of air.
 >
-> **temperature_feeling**\
+> **temperature_feels_like**\
 >   The current feeling of temperature of air.
 >
 > **humidity**\

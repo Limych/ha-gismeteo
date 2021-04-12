@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.3.0"
+VERSION = "2.3.1.dev0"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 
@@ -135,10 +135,10 @@ SENSOR_TYPES = {
         ATTR_NAME: "Temperature",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
-    "temperature_feeling": {
+    "temperature_feels_like": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_ICON: None,
-        ATTR_NAME: "Temperature Feeling",
+        ATTR_NAME: "Temperature Feels Like",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
     "humidity": {

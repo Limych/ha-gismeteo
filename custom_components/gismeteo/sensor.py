@@ -208,8 +208,8 @@ class GismeteoSensor(GismeteoEntity):
                 self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
             elif self._kind == "temperature":
                 self._state = self._gismeteo.temperature()
-            elif self._kind == "temperature_feeling":
-                self._state = self._gismeteo.temperature_feeling()
+            elif self._kind == "temperature_feels_like":
+                self._state = self._gismeteo.temperature_feels_like()
             elif self._kind == "wind_speed":
                 self._state = self._gismeteo.wind_speed_ms()
             elif self._kind == "wind_bearing":

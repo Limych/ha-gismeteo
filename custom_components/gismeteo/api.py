@@ -287,7 +287,7 @@ class GismeteoApiClient:
         temperature = src.get(ATTR_WEATHER_TEMPERATURE)
         return float(temperature) if temperature is not None else STATE_UNKNOWN
 
-    def temperature_feeling(self, src=None):
+    def temperature_feels_like(self, src=None):
         """Return the current temperature feeling."""
         temp = self.temperature(src)
         humi = self.humidity(src)
@@ -296,8 +296,8 @@ class GismeteoApiClient:
             return STATE_UNKNOWN
 
         e_value = humi * 0.06105 * math.exp((17.27 * temp) / (237.7 + temp))
-        feeling = temp + 0.348 * e_value - 0.7 * wind - 4.25
-        return round(feeling, 1)
+        feels_like = temp + 0.348 * e_value - 0.7 * wind - 4.25
+        return round(feels_like, 1)
 
     def water_temperature(self, src=None):
         """Return the current temperature of water."""
