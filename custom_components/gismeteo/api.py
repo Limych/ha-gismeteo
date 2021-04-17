@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Any, Callable, Optional
 
 from aiohttp import ClientSession
+from bs4 import BeautifulSoup
 from homeassistant.components.weather import (
     ATTR_CONDITION_CLEAR_NIGHT,
     ATTR_CONDITION_CLOUDY,
@@ -47,10 +48,10 @@ from homeassistant.const import (
     ATTR_ID,
     ATTR_LATITUDE,
     ATTR_LONGITUDE,
-    ATTR_NAME,
     HTTP_OK,
     STATE_UNKNOWN,
 )
+from homeassistant.util import Throttle
 from homeassistant.util import dt as dt_util
 
 from .cache import Cache
@@ -65,6 +66,7 @@ from .const import (
     ATTR_FORECAST_STORM,
     ATTR_SUNRISE,
     ATTR_SUNSET,
+    ATTR_WEATHER_ALLERGY_BIRCH,
     ATTR_WEATHER_CLOUDINESS,
     ATTR_WEATHER_CONDITION,
     ATTR_WEATHER_GEOMAGNETIC_FIELD,
@@ -73,6 +75,7 @@ from .const import (
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
     ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
+    ATTR_WEATHER_UV_INDEX,
     ATTR_WEATHER_WATER_TEMPERATURE,
     CONDITION_FOG_CLASSES,
     ENDPOINT_URL,
@@ -80,6 +83,9 @@ from .const import (
     FORECAST_MODE_HOURLY,
     MMHG2HPA,
     MS2KMH,
+    PARSED_UPDATE_INTERVAL,
+    PARSER_URL_FORMAT,
+    PARSER_USER_AGENT,
     PRECIPITATION_AMOUNT,
 )
 
@@ -113,7 +119,6 @@ class GismeteoApiClient:
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         location_key: Optional[int] = None,
-        location_name: Optional[str] = None,
         mode=FORECAST_MODE_HOURLY,
         params: Optional[dict] = None,
     ):
@@ -126,9 +131,6 @@ class GismeteoApiClient:
 
             _LOGGER.debug("Place coordinates: %s, %s", latitude, longitude)
 
-        else:
-            _LOGGER.debug("Place location: %s (%s)", location_name, location_key)
-
         _LOGGER.debug("Forecast mode: %s", mode)
 
         self._session = session
@@ -138,7 +140,6 @@ class GismeteoApiClient:
         self._longitude = longitude
         self._attributes = {
             ATTR_ID: location_key,
-            ATTR_NAME: location_name,
         }
 
         self._current = {}
@@ -168,16 +169,38 @@ class GismeteoApiClient:
         return f"{self._attributes[ATTR_ID]}-{self._mode}".lower()
 
     @property
-    def current(self):
+    def attributes(self):
+        """Return an attributes."""
+        return self._attributes
+
+    @property
+    def current_data(self):
         """Return current weather data."""
         return self._current
 
-    @property
-    def attributes(self):
-        """Return forecast attributes."""
-        return self._attributes
+    def forecast_data(self, pos: int):
+        """Return forecast data."""
+        forecast = []
+        now = int(time.time())
+        for data in self._forecast:
+            fc_time = data.get(ATTR_FORECAST_TIME)
+            if fc_time is None:
+                continue  # pragma: no cover
 
-    async def _async_get_data(self, url: str, cache_fname: Optional[str] = None) -> str:
+            if fc_time < now:
+                forecast = [data]
+            else:
+                forecast.append(data)
+
+        try:
+            return forecast[pos]
+
+        except IndexError:
+            return {}
+
+    async def _async_get_data(
+        self, url: str, cache_fname: Optional[str] = None, as_browser: bool = False
+    ) -> str:
         """Retreive data from Gismeteo API and cache results."""
         _LOGGER.debug("Requesting URL %s", url)
 
@@ -187,7 +210,11 @@ class GismeteoApiClient:
                 _LOGGER.debug("Cached response used")
                 return self._cache.read_cache(cache_fname)
 
-        async with self._session.get(url) as resp:
+        headers = {}
+        if as_browser:
+            headers["User-Agent"] = PARSER_USER_AGENT
+
+        async with self._session.get(url, headers=headers) as resp:
             if resp.status != HTTP_OK:
                 raise ApiError(f"Invalid response from Gismeteo API: {resp.status}")
             _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
@@ -198,7 +225,7 @@ class GismeteoApiClient:
 
         return data
 
-    async def async_get_location(self):
+    async def async_update_location(self):
         """Retreive location data from Gismeteo."""
         url = (
             ENDPOINT_URL
@@ -212,14 +239,56 @@ class GismeteoApiClient:
             item = xml.find("item")
             self._attributes = {
                 ATTR_ID: self._get(item, "id", int),
-                ATTR_NAME: self._get(item, "n"),
                 ATTR_LATITUDE: self._get(item, "lat", float),
                 ATTR_LONGITUDE: self._get(item, "lng", float),
             }
+
         except (etree.ParseError, TypeError, AttributeError) as ex:
             raise ApiError(
                 "Can't retrieve location data! Invalid server response."
             ) from ex
+
+    async def async_get_forecast(self):
+        """Get the latest forecast data from Gismeteo."""
+        if self.attributes[ATTR_ID] is None:
+            await self.async_update_location()
+
+        url = f"{ENDPOINT_URL}/forecast/?city={self.attributes[ATTR_ID]}&lang=en"
+        cache_fname = f"forecast_{self.attributes[ATTR_ID]}"
+
+        return await self._async_get_data(url, cache_fname)
+
+    async def async_get_parsed(self):
+        """Retrieve data from Gismeteo main site."""
+        forecast = await self.async_get_forecast()
+        location = etree.fromstring(forecast).find("location")
+        location_uri = str(location.get("nowcast_url")).strip("/")[8:]
+        tzone = int(location.get("tzone"))
+        today = self._get_utime(location.get("cur_time")[:10], tzone)
+
+        data = {}
+        url = PARSER_URL_FORMAT.format(location_uri)
+        cache_fname = f"forecast_parsed_{self.attributes[ATTR_ID]}"
+
+        response = await self._async_get_data(url, cache_fname, as_browser=True)
+
+        parser = BeautifulSoup(response, "html.parser")
+
+        try:
+            for key in ("allergy", "uvb"):
+                data_div = parser.find("div", {"data-widget-id": key})
+                for item in data_div.find_all("div", {"class": "widget__item"}):
+                    day = int(item.attrs["data-item"])
+                    date = today + 86400 * day
+                    value = item.find("div", {"class": "widget__value"})
+                    if value:
+                        data.setdefault(date, {})
+                        data[date][key] = int(value.text.strip())
+
+            return data
+
+        except AttributeError:  # pragma: no cover
+            return {}
 
     @staticmethod
     def _get(var: dict, ind: str, func: Optional[Callable] = None) -> Any:
@@ -237,7 +306,7 @@ class GismeteoApiClient:
         return sunrise_time < testing_time < sunset_time
 
     def condition(self, src=None):
-        """Return the current condition."""
+        """Return the condition summary."""
         src = src or self._current
 
         cld = src.get(ATTR_WEATHER_CLOUDINESS)
@@ -397,16 +466,27 @@ class GismeteoApiClient:
         geomagnetic = src.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
         return geomagnetic if geomagnetic is not None else STATE_UNKNOWN
 
-    def forecast(self, src=None):
+    def allergy_birch(self, src=None):
+        """Return allergy birch value."""
+        src = src or self.forecast_data(0)
+        allergy = src.get(ATTR_WEATHER_ALLERGY_BIRCH)
+        return allergy if allergy is not None else STATE_UNKNOWN
+
+    def uv_index(self, src=None):
+        """Return UV index."""
+        src = src or self.forecast_data(0)
+        uv_index = src.get(ATTR_WEATHER_UV_INDEX)
+        return uv_index if uv_index is not None else STATE_UNKNOWN
+
+    def forecast(self):
         """Return the forecast array."""
-        src = src or self._forecast
         forecast = []
         now = int(time.time())
         dt_util.set_default_time_zone(self._timezone)
-        for i in src:
+        for i in self._forecast:
             fc_time = i.get(ATTR_FORECAST_TIME)
             if fc_time is None:
-                continue
+                continue  # pragma: no cover
 
             data = {
                 ATTR_FORECAST_TIME: dt_util.as_local(
@@ -443,20 +523,21 @@ class GismeteoApiClient:
         local_date += f"+{tz_h:02}:{tz_m:02}" if tzone >= 0 else f"-{tz_h:02}:{tz_m:02}"
         return int(dt_util.as_timestamp(local_date))
 
+    @Throttle(PARSED_UPDATE_INTERVAL)
+    async def async_update_parsed(self):
+        """Update parsed data."""
+        self._parsed = await self.async_get_parsed()
+
     async def async_update(self) -> bool:
         """Get the latest data from Gismeteo."""
-        if self.attributes[ATTR_ID] is None:
-            await self.async_get_location()
-
-        url = f"{ENDPOINT_URL}/forecast/?city={self.attributes[ATTR_ID]}&lang=en"
-        cache_fname = f"forecast_{self.attributes[ATTR_ID]}"
-
-        response = await self._async_get_data(url, cache_fname)
+        response = await self.async_get_forecast()
         try:
             xml = etree.fromstring(response)
             tzone = int(xml.find("location").get("tzone"))
             current = xml.find("location/fact")
             current_v = current.find("values")
+
+            await self.async_update_parsed()
 
             self._current = {
                 ATTR_SUNRISE: self._get(current, "sunrise", int),
@@ -485,10 +566,12 @@ class GismeteoApiClient:
 
                     for i in day.findall("forecast"):
                         fc_v = i.find("values")
+                        tstamp = self._get_utime(i.get("valid"), tzone)
+                        tstamp_day = self._get_utime(i.get("valid")[:10], tzone)
                         data = {
                             ATTR_SUNRISE: sunrise,
                             ATTR_SUNSET: sunset,
-                            ATTR_FORECAST_TIME: self._get_utime(i.get("valid"), tzone),
+                            ATTR_FORECAST_TIME: tstamp,
                             ATTR_FORECAST_CONDITION: self._get(fc_v, "descr"),
                             ATTR_FORECAST_TEMP: self._get(fc_v, "t", int),
                             ATTR_FORECAST_PRESSURE: self._get(fc_v, "p", int),
@@ -510,14 +593,27 @@ class GismeteoApiClient:
                                 fc_v, "grade", int
                             ),
                         }
+
+                        parsed = self._parsed.get(tstamp_day)
+                        if parsed:
+                            data.update(
+                                {
+                                    ATTR_WEATHER_ALLERGY_BIRCH: self._get(
+                                        parsed, "allergy"
+                                    ),
+                                    ATTR_WEATHER_UV_INDEX: self._get(parsed, "uvb"),
+                                }
+                            )
+
                         self._forecast.append(data)
 
             else:  # self._mode == FORECAST_MODE_DAILY
                 for day in xml.findall("location/day[@descr]"):
+                    tstamp = self._get_utime(day.get("date"), tzone)
                     data = {
                         ATTR_SUNRISE: self._get(day, "sunrise", int),
                         ATTR_SUNSET: self._get(day, "sunset", int),
-                        ATTR_FORECAST_TIME: self._get_utime(day.get("date"), tzone),
+                        ATTR_FORECAST_TIME: tstamp,
                         ATTR_FORECAST_CONDITION: self._get(day, "descr"),
                         ATTR_FORECAST_TEMP: self._get(day, "tmax", int),
                         ATTR_FORECAST_TEMP_LOW: self._get(day, "tmin", int),
@@ -538,6 +634,18 @@ class GismeteoApiClient:
                             day, "grademax", int
                         ),
                     }
+
+                    parsed = self._parsed.get(tstamp)
+                    if parsed:
+                        data.update(
+                            {
+                                ATTR_WEATHER_ALLERGY_BIRCH: self._get(
+                                    parsed, "allergy"
+                                ),
+                                ATTR_WEATHER_UV_INDEX: self._get(parsed, "uvb"),
+                            }
+                        )
+
                     self._forecast.append(data)
 
             return True

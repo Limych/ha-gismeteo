@@ -1,1 +1,2 @@
 homeassistant
+beautifulsoup4~=4.9

@@ -55,6 +55,7 @@ PLATFORMS = [SENSOR, WEATHER]
 CONF_WEATHER = "weather"
 CONF_CACHE_DIR = "cache_dir"
 CONF_FORECAST = "forecast"
+CONF_FORECAST_DAYS = "forecast_days"
 CONF_PLATFORM_FORMAT = CONF_PLATFORM + "_{}"
 
 FORECAST_MODE_HOURLY = "hourly"
@@ -94,7 +95,7 @@ UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
 #
-PARSER_URL_TPL = "https://www.gismeteo.ru/weather-{}-{}/10-days/"
+PARSER_URL_FORMAT = "https://www.gismeteo.ru/weather-{}/10-days/"
 PARSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.81"
 
 UPDATE_INTERVAL = timedelta(minutes=5)

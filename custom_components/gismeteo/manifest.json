@@ -11,5 +11,7 @@
     "codeowners": [
         "@Limych"
     ],
-    "requirements": []
+    "requirements": [
+        "beautifulsoup4~=4.9"
+    ]
 }

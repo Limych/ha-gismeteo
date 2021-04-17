@@ -20,6 +20,7 @@ import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import load_fixture
 
 from custom_components.gismeteo import GismeteoApiClient
@@ -44,12 +45,23 @@ def gismeteo_api():
     """Make mock Gismeteo API client."""
     location_data = load_fixture("location.xml")
     forecast_data = load_fixture("forecast.xml")
+    forecast_parsed_data = load_fixture("forecast_parsed.html")
 
     # pylint: disable=unused-argument
     def mock_data(*args, **kwargs):
-        return location_data if args[0].find("/cities/") >= 0 else forecast_data
+        return (
+            location_data
+            if args[0].find("/cities/") >= 0
+            else forecast_data
+            if args[0].find("/forecast/") >= 0
+            else forecast_parsed_data
+        )
 
-    with patch.object(GismeteoApiClient, "_async_get_data", side_effect=mock_data):
+    with patch.object(
+        GismeteoApiClient, "_async_get_data", side_effect=mock_data
+    ), patch.object(
+        dt_util, "now", return_value=dt_util.parse_datetime("2021-02-21T16:16:00+03:00")
+    ):
         yield
 
 

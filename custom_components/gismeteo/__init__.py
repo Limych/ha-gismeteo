@@ -37,6 +37,7 @@ from .api import ApiError, GismeteoApiClient
 from .const import (
     CONF_CACHE_DIR,
     CONF_FORECAST,
+    CONF_FORECAST_DAYS,
     CONF_PLATFORM_FORMAT,
     CONF_WEATHER,
     COORDINATOR,
@@ -66,6 +67,7 @@ WEATHER_SCHEMA = vol.Schema(
 
 SENSORS_SCHEMA = vol.Schema(
     {
+        vol.Optional(CONF_FORECAST_DAYS): cv.positive_int,
         vol.Optional(CONF_MONITORED_CONDITIONS, default=[]): vol.All(
             cv.ensure_list, [vol.In(SENSOR_TYPES)]
         ),
@@ -127,7 +129,7 @@ def _get_api_client(hass: HomeAssistant, config: ConfigType) -> GismeteoApiClien
 async def _async_get_coordinator(hass: HomeAssistant, config: ConfigType):
     """Prepare update coordinator instance."""
     gismeteo = _get_api_client(hass, config)
-    await gismeteo.async_get_location()
+    await gismeteo.async_update_location()
 
     coordinator = GismeteoDataUpdateCoordinator(hass, gismeteo)
     await coordinator.async_refresh()
@@ -241,7 +243,7 @@ class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             async with timeout(10):
                 await self.gismeteo.async_update()
-            return self.gismeteo.current
+            return self.gismeteo.current_data
 
         except (ApiError, ClientConnectorError) as error:
             raise UpdateFailed(error) from error

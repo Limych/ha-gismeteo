@@ -10,11 +10,41 @@ If you are set component settings via Home Assistant UI, please, skip this chapt
 
 If you are set component settings via file `configuration.yaml`, you need to edit the settings for the new version to work.
 
-Now all the component settings are collected in a single block 123.
+Now all the component settings are collected in a single block `gismeteo`.
 If you now, for example, have such a config:
 ```yaml
+# Example configuration.yaml entry
+sensor:
+  - platform: gismeteo
+    name: Sweet Home
+    monitored_conditions:
+      - temperature
+      - humidity
+
+weather:
+  - platform: gismeteo
+    name: Sweet Home
+    latitude: ...
+    longitude: ...
+    mode: hourly  # Default value
 ```
 It will turn into this config:
+```yaml
+# Example configuration.yaml entry
+gismeteo:
+  sweet_home:
+    name: Sweet Home
+    latitude: ...
+    longitude: ...
+    weather:
+      mode: hourly  # Default value
+    sensors:
+      monitored_conditions:
+        - temperature
+        - humidity
+```
+
+See detailed instructions in [Documentation][component].
 {% endif %}
 
 [![GitHub Release][releases-shield]][releases]

@@ -24,12 +24,18 @@ logger:
 
 gismeteo:
   sweet_home:
-    name: Sweet Home
-#    latitude: ...
-#    longitude: ...
-    weather:
-      mode: hourly  # Default value
-    sensor:
+    weather: {}
+    sensors:
       monitored_conditions:
         - temperature
         - humidity
+
+  dacha:
+    name: Our Country House
+#    latitude: ...
+#    longitude: ...
+    sensors:
+      monitored_conditions:
+        - temperature
+        - humidity
+      forecast_days: 2
