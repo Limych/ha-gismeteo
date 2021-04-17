@@ -1,6 +1,21 @@
 {% if prerelease %}
 ### NB!: This is a Beta version!
 {% endif %}
+{% if (version_installed.split(".")[0] | int) < 3  %}
+### ATTENTION! Breaking changes!
+
+Starting from version 3.0.0, the format of the component settings in file `configuration.yaml` has been changed.
+
+If you are set component settings via Home Assistant UI, please, skip this chapter.
+
+If you are set component settings via file `configuration.yaml`, you need to edit the settings for the new version to work.
+
+Now all the component settings are collected in a single block 123.
+If you now, for example, have such a config:
+```yaml
+```
+It will turn into this config:
+{% endif %}
 
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]

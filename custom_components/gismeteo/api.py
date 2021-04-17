@@ -80,6 +80,7 @@ from .const import (
     FORECAST_MODE_HOURLY,
     MMHG2HPA,
     MS2KMH,
+    PRECIPITATION_AMOUNT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,6 +113,7 @@ class GismeteoApiClient:
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         location_key: Optional[int] = None,
+        location_name: Optional[str] = None,
         mode=FORECAST_MODE_HOURLY,
         params: Optional[dict] = None,
     ):
@@ -122,7 +124,11 @@ class GismeteoApiClient:
             if not self._valid_coordinates(latitude, longitude):
                 raise InvalidCoordinatesError("Your coordinates are invalid.")
 
-        _LOGGER.debug("Place coordinates: %s, %s", latitude, longitude)
+            _LOGGER.debug("Place coordinates: %s, %s", latitude, longitude)
+
+        else:
+            _LOGGER.debug("Place location: %s (%s)", location_name, location_key)
+
         _LOGGER.debug("Forecast mode: %s", mode)
 
         self._session = session
@@ -132,6 +138,7 @@ class GismeteoApiClient:
         self._longitude = longitude
         self._attributes = {
             ATTR_ID: location_key,
+            ATTR_NAME: location_name,
         }
 
         self._current = {}
@@ -141,6 +148,7 @@ class GismeteoApiClient:
             if params.get("timezone") is not None
             else dt_util.DEFAULT_TIME_ZONE
         )
+        self._parsed = {}
 
     @staticmethod
     def _valid_coordinates(latitude: float, longitude: float) -> bool:
@@ -169,7 +177,7 @@ class GismeteoApiClient:
         """Return forecast attributes."""
         return self._attributes
 
-    async def _async_get_data(self, url: str, cache_fname=None) -> str:
+    async def _async_get_data(self, url: str, cache_fname: Optional[str] = None) -> str:
         """Retreive data from Gismeteo API and cache results."""
         _LOGGER.debug("Requesting URL %s", url)
 
@@ -267,7 +275,7 @@ class GismeteoApiClient:
             cond = ATTR_CONDITION_SNOWY  # Snow
         elif pr_type == 3:
             cond = ATTR_CONDITION_SNOWY_RAINY  # Snow and Rain
-        elif self.wind_speed_ms(src) > 10.8:
+        elif self.wind_speed(src) > 10.8:
             if cond == ATTR_CONDITION_CLOUDY:
                 cond = ATTR_CONDITION_WINDY_VARIANT  # Wind and clouds
             else:
@@ -282,70 +290,112 @@ class GismeteoApiClient:
         return cond
 
     def temperature(self, src=None):
-        """Return the current temperature."""
+        """Return the temperature."""
         src = src or self._current
         temperature = src.get(ATTR_WEATHER_TEMPERATURE)
         return float(temperature) if temperature is not None else STATE_UNKNOWN
 
-    def temperature_feeling(self, src=None):
-        """Return the current temperature feeling."""
+    def temperature_feels_like(self, src=None):
+        """Return the temperature feels like."""
         temp = self.temperature(src)
         humi = self.humidity(src)
-        wind = self.wind_speed_ms(src)
+        wind = self.wind_speed(src)
         if STATE_UNKNOWN in (temp, humi, wind):
             return STATE_UNKNOWN
 
         e_value = humi * 0.06105 * math.exp((17.27 * temp) / (237.7 + temp))
-        feeling = temp + 0.348 * e_value - 0.7 * wind - 4.25
-        return round(feeling, 1)
+        feels = temp + 0.348 * e_value - 0.7 * wind - 4.25
+        return round(feels, 1)
 
     def water_temperature(self, src=None):
-        """Return the current temperature of water."""
+        """Return the temperature of water."""
         src = src or self._current
         temperature = src.get(ATTR_WEATHER_WATER_TEMPERATURE)
         return float(temperature) if temperature is not None else STATE_UNKNOWN
 
     def pressure_mmhg(self, src=None):
-        """Return the current pressure in mmHg."""
+        """Return the pressure in mmHg."""
         src = src or self._current
         pressure = src.get(ATTR_WEATHER_PRESSURE)
         return float(pressure) if pressure is not None else STATE_UNKNOWN
 
-    def pressure_hpa(self, src=None):
-        """Return the current pressure in hPa."""
+    def pressure(self, src=None):
+        """Return the pressure in hPa."""
         src = src or self._current
         pressure = src.get(ATTR_WEATHER_PRESSURE)
         return round(pressure * MMHG2HPA, 1) if pressure is not None else STATE_UNKNOWN
 
     def humidity(self, src=None):
-        """Return the name of the sensor."""
+        """Return the humidity."""
         src = src or self._current
         humidity = src.get(ATTR_WEATHER_HUMIDITY)
         return int(humidity) if humidity is not None else STATE_UNKNOWN
 
     def wind_bearing(self, src=None):
-        """Return the current wind bearing."""
+        """Return the wind bearing."""
         src = src or self._current
         bearing = int(src.get(ATTR_WEATHER_WIND_BEARING, 0))
         return (bearing - 1) * 45 if bearing > 0 else STATE_UNKNOWN
 
     def wind_speed_kmh(self, src=None):
-        """Return the current windspeed in km/h."""
+        """Return the wind speed in km/h."""
         src = src or self._current
         speed = src.get(ATTR_WEATHER_WIND_SPEED)
         return round(speed * MS2KMH, 1) if speed is not None else STATE_UNKNOWN
 
-    def wind_speed_ms(self, src=None):
-        """Return the current windspeed in m/s."""
+    def wind_speed(self, src=None):
+        """Return the wind speed in m/s."""
         src = src or self._current
         speed = src.get(ATTR_WEATHER_WIND_SPEED)
         return float(speed) if speed is not None else STATE_UNKNOWN
 
     def precipitation_amount(self, src=None):
-        """Return the current precipitation amount in mm."""
+        """Return the precipitation amount in mm."""
         src = src or self._current
         precipitation = src.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
         return precipitation if precipitation is not None else STATE_UNKNOWN
+
+    def clouds(self, src=None):
+        """Return the cloudiness amount in percents."""
+        src = src or self._current
+        cloudiness = src.get(ATTR_WEATHER_CLOUDINESS)
+        return int(cloudiness * 100 / 3) if cloudiness is not None else STATE_UNKNOWN
+
+    def rain(self, src=None):
+        """Return the rain amount in mm."""
+        src = src or self._current
+        return (
+            (
+                src.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
+                or PRECIPITATION_AMOUNT[src.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)]
+            )
+            if src.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [1, 3]
+            else 0
+        )
+
+    def snow(self, src=None):
+        """Return the snow amount in mm."""
+        src = src or self._current
+        return (
+            (
+                src.get(ATTR_WEATHER_PRECIPITATION_AMOUNT)
+                or PRECIPITATION_AMOUNT[src.get(ATTR_WEATHER_PRECIPITATION_INTENSITY)]
+            )
+            if src.get(ATTR_WEATHER_PRECIPITATION_TYPE) in [2, 3]
+            else 0
+        )
+
+    def storm(self, src=None):
+        """Return True if storm."""
+        src = src or self._current
+        storm = src.get(ATTR_WEATHER_STORM)
+        return storm if storm is not None else STATE_UNKNOWN
+
+    def geomagnetic(self, src=None):
+        """Return geomagnetic field index."""
+        src = src or self._current
+        geomagnetic = src.get(ATTR_WEATHER_GEOMAGNETIC_FIELD)
+        return geomagnetic if geomagnetic is not None else STATE_UNKNOWN
 
     def forecast(self, src=None):
         """Return the forecast array."""
@@ -364,7 +414,7 @@ class GismeteoApiClient:
                 ).isoformat(),
                 ATTR_FORECAST_CONDITION: self.condition(i),
                 ATTR_FORECAST_TEMP: self.temperature(i),
-                ATTR_FORECAST_PRESSURE: self.pressure_hpa(i),
+                ATTR_FORECAST_PRESSURE: self.pressure(i),
                 ATTR_FORECAST_HUMIDITY: self.humidity(i),
                 ATTR_FORECAST_WIND_SPEED: self.wind_speed_kmh(i),
                 ATTR_FORECAST_WIND_BEARING: self.wind_bearing(i),
@@ -391,7 +441,7 @@ class GismeteoApiClient:
             local_date += "T00:00:00"
         tz_h, tz_m = divmod(abs(tzone), 60)
         local_date += f"+{tz_h:02}:{tz_m:02}" if tzone >= 0 else f"-{tz_h:02}:{tz_m:02}"
-        return dt_util.as_timestamp(local_date)
+        return int(dt_util.as_timestamp(local_date))
 
     async def async_update(self) -> bool:
         """Get the latest data from Gismeteo."""

@@ -10,9 +10,26 @@ logger:
 
 #sensor:
 #  - platform: gismeteo
+#    name: Sweet Home
 #    monitored_conditions:
 #      - temperature
-#      - temperature_feeling
+#      - humidity
 #
 #weather:
 #  - platform: gismeteo
+#    name: Sweet Home
+#    latitude: ...
+#    longitude: ...
+#    mode: hourly  # Default value
+
+gismeteo:
+  sweet_home:
+    name: Sweet Home
+#    latitude: ...
+#    longitude: ...
+    weather:
+      mode: hourly  # Default value
+    sensor:
+      monitored_conditions:
+        - temperature
+        - humidity

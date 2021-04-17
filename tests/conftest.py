@@ -1,5 +1,6 @@
 # pylint: disable=protected-access,redefined-outer-name
 """Global fixtures for integration."""
+
 # Fixtures allow you to replace functions with a Mock object. You can perform
 # many options via the Mock to reflect a particular behavior from the original
 # function that you want to see without going through the function's actual logic.
@@ -16,7 +17,7 @@
 # See here for more info: https://docs.pytest.org/en/latest/fixture.html (note that
 # pytest includes fixtures OOB which you can use as defined on this page)
 import asyncio
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import load_fixture
@@ -70,3 +71,12 @@ def error_get_data_fixture():
         GismeteoApiClient, "async_update", side_effect=asyncio.TimeoutError
     ):
         yield
+
+
+class AsyncMock(MagicMock):
+    """Async version of Mock class."""
+
+    # pylint: disable=useless-super-delegation,invalid-overridden-method
+    async def __call__(self, *args, **kwargs):
+        """Call class methods."""
+        return super().__call__(*args, **kwargs)

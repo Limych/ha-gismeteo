@@ -10,53 +10,107 @@ https://github.com/Limych/ha-gismeteo/
 
 import asyncio
 import logging
+from typing import List
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
-from homeassistant.config_entries import SOURCE_IMPORT
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_PLATFORM
-from homeassistant.core import Config, HomeAssistant
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
+from homeassistant.const import (
+    CONF_API_KEY,
+    CONF_LATITUDE,
+    CONF_LONGITUDE,
+    CONF_MODE,
+    CONF_MONITORED_CONDITIONS,
+    CONF_NAME,
+    CONF_SENSORS,
+)
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import STORAGE_DIR
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import ApiError, GismeteoApiClient
 from .const import (
     CONF_CACHE_DIR,
-    CONF_PLATFORMS,
-    CONF_YAML,
+    CONF_FORECAST,
+    CONF_PLATFORM_FORMAT,
+    CONF_WEATHER,
     COORDINATOR,
     DOMAIN,
+    DOMAIN_YAML,
+    FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
     PLATFORMS,
+    SENSOR,
+    SENSOR_TYPES,
     STARTUP_MESSAGE,
     UNDO_UPDATE_LISTENER,
     UPDATE_INTERVAL,
+    WEATHER,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=unused-argument
-async def async_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up component."""
-    # Print startup messages
-    hass.data.setdefault(DOMAIN, {})
-    _LOGGER.info(STARTUP_MESSAGE)
+WEATHER_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_MODE, default=FORECAST_MODE_HOURLY): vol.In(
+            [FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]
+        ),
+    }
+)
 
-    # Clean up old imports from configuration.yaml
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.source == SOURCE_IMPORT:
-            await hass.config_entries.async_remove(entry.entry_id)
+SENSORS_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_MONITORED_CONDITIONS, default=[]): vol.All(
+            cv.ensure_list, [vol.In(SENSOR_TYPES)]
+        ),
+        vol.Optional(CONF_FORECAST): cv.deprecated,
+    }
+)
+
+LOCATION_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_NAME): cv.string,
+        vol.Optional(CONF_API_KEY): cv.string,
+        vol.Optional(CONF_LATITUDE): cv.latitude,
+        vol.Optional(CONF_LONGITUDE): cv.longitude,
+        vol.Optional(CONF_WEATHER): WEATHER_SCHEMA,
+        vol.Optional(CONF_SENSORS): SENSORS_SCHEMA,
+        vol.Optional(CONF_CACHE_DIR): cv.string,
+    }
+)
+
+CONFIG_SCHEMA = vol.Schema(
+    {DOMAIN: cv.schema_with_slug_keys(LOCATION_SCHEMA)}, extra=vol.ALLOW_EXTRA
+)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up component."""
+    if DOMAIN not in hass.data:
+        _LOGGER.info(STARTUP_MESSAGE)
+        hass.data[DOMAIN] = {}
+
+    if DOMAIN not in config:
+        return True
+
+    hass.data[DOMAIN_YAML] = config[DOMAIN]
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data={}
+        )
+    )
 
     return True
 
 
-def get_gismeteo(hass: HomeAssistant, config) -> GismeteoApiClient:
-    """Prepare Gismeteo instance."""
+def _get_api_client(hass: HomeAssistant, config: ConfigType) -> GismeteoApiClient:
+    """Prepare Gismeteo API client instance."""
     return GismeteoApiClient(
         async_get_clientsession(hass),
         latitude=config.get(CONF_LATITUDE, hass.config.latitude),
@@ -70,9 +124,9 @@ def get_gismeteo(hass: HomeAssistant, config) -> GismeteoApiClient:
     )
 
 
-async def _async_get_coordinator(hass: HomeAssistant, config: dict):
+async def _async_get_coordinator(hass: HomeAssistant, config: ConfigType):
     """Prepare update coordinator instance."""
-    gismeteo = get_gismeteo(hass, config)
+    gismeteo = _get_api_client(hass, config)
     await gismeteo.async_get_location()
 
     coordinator = GismeteoDataUpdateCoordinator(hass, gismeteo)
@@ -84,16 +138,39 @@ async def _async_get_coordinator(hass: HomeAssistant, config: dict):
     return coordinator
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
+def _convert_yaml_config(config: ConfigType) -> ConfigType:
+    """Convert YAML config to EntryFlow config."""
+    cfg = config.copy()
+
+    if CONF_WEATHER in cfg:
+        cfg.update(cfg[CONF_WEATHER])
+        cfg.pop(CONF_WEATHER)
+        cfg[CONF_PLATFORM_FORMAT.format(WEATHER)] = True
+
+    if CONF_SENSORS in cfg:
+        cfg.update(cfg[CONF_SENSORS])
+        cfg.pop(CONF_SENSORS)
+        cfg[CONF_PLATFORM_FORMAT.format(SENSOR)] = True
+
+    return cfg
+
+
+def _get_platforms(config: ConfigType) -> List[str]:
+    """Get configured platforms."""
+    return [x for x in PLATFORMS if config.get(CONF_PLATFORM_FORMAT.format(x), True)]
+
+
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up Gismeteo as config entry."""
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
-        await asyncio.sleep(12)
-
         platforms = set()
 
-        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            platforms.add(cfg[CONF_PLATFORM])
+        for uid, cfg in hass.data[DOMAIN_YAML].items():
+            cfg = _convert_yaml_config(cfg)
+
+            platforms.update(_get_platforms(cfg))
+
             coordinator = await _async_get_coordinator(hass, cfg)
             hass.data[DOMAIN][uid] = {
                 COORDINATOR: coordinator,
@@ -107,10 +184,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
 
     else:
         # Setup from config entry
-        config = config_entry.data.copy()  # type: dict
+        config = config_entry.data.copy()  # type: ConfigType
         config.update(config_entry.options)
 
-        platforms = [x for x in PLATFORMS if config.get(f"{CONF_PLATFORM}_{x}", True)]
+        platforms = _get_platforms(config)
 
         coordinator = await _async_get_coordinator(hass, config)
         undo_listener = config_entry.add_update_listener(update_listener)
@@ -127,15 +204,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, config_entry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    platforms = config_entry.data.get(CONF_PLATFORMS, [SENSOR_DOMAIN, WEATHER_DOMAIN])
-
     unload_ok = all(
         await asyncio.gather(
             *[
                 hass.config_entries.async_forward_entry_unload(config_entry, component)
-                for component in platforms
+                for component in PLATFORMS
             ]
         )
     )
@@ -148,7 +223,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry) -> bool:
     return unload_ok
 
 
-async def update_listener(hass: HomeAssistant, config_entry):
+async def update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     """Update listener."""
     await hass.config_entries.async_reload(config_entry.entry_id)
 
@@ -167,5 +242,6 @@ class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
             async with timeout(10):
                 await self.gismeteo.async_update()
             return self.gismeteo.current
+
         except (ApiError, ClientConnectorError) as error:
             raise UpdateFailed(error) from error

@@ -18,6 +18,7 @@ from homeassistant.const import (
     ATTR_ICON,
     ATTR_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONF_PLATFORM,
     DEGREE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRESSURE,
@@ -32,9 +33,10 @@ from homeassistant.const import (
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.3.0"
+VERSION = "3.0.0.dev0"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
+DOMAIN_YAML = DOMAIN + "_yaml"
 
 STARTUP_MESSAGE = f"""
 -------------------------------------------------------------------
@@ -50,16 +52,13 @@ If you have ANY issues with this you need to open an issue here:
 PLATFORMS = [SENSOR, WEATHER]
 
 # Configuration and options
+CONF_WEATHER = "weather"
 CONF_CACHE_DIR = "cache_dir"
 CONF_FORECAST = "forecast"
-CONF_PLATFORMS = "platforms"
-CONF_YAML = "_yaml"
+CONF_PLATFORM_FORMAT = CONF_PLATFORM + "_{}"
 
 FORECAST_MODE_HOURLY = "hourly"
 FORECAST_MODE_DAILY = "daily"
-
-# Defaults
-DEFAULT_NAME = "Gismeteo"
 
 # Attributes
 ATTR_SUNRISE = "sunrise"
@@ -74,6 +73,8 @@ ATTR_WEATHER_STORM = "storm"
 ATTR_WEATHER_GEOMAGNETIC_FIELD = "gm_field"
 ATTR_WEATHER_PHENOMENON = "phenomenon"
 ATTR_WEATHER_WATER_TEMPERATURE = "water_temperature"
+ATTR_WEATHER_ALLERGY_BIRCH = "allergy_birch"
+ATTR_WEATHER_UV_INDEX = "uv_index"
 #
 ATTR_FORECAST_HUMIDITY = "humidity"
 ATTR_FORECAST_PRESSURE = "pressure"
@@ -84,11 +85,20 @@ ATTR_FORECAST_PRECIPITATION_INTENSITY = ATTR_WEATHER_PRECIPITATION_INTENSITY
 ATTR_FORECAST_STORM = ATTR_WEATHER_STORM
 ATTR_FORECAST_GEOMAGNETIC_FIELD = ATTR_WEATHER_GEOMAGNETIC_FIELD
 ATTR_FORECAST_PHENOMENON = ATTR_WEATHER_PHENOMENON
+ATTR_FORECAST_ALLERGY_BIRCH = ATTR_WEATHER_ALLERGY_BIRCH
+ATTR_FORECAST_UV_INDEX = ATTR_WEATHER_UV_INDEX
+
+COORDINATOR = "coordinator"
+UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 
 ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
+#
+PARSER_URL_TPL = "https://www.gismeteo.ru/weather-{}-{}/10-days/"
+PARSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.81"
 
 UPDATE_INTERVAL = timedelta(minutes=5)
+PARSED_UPDATE_INTERVAL = timedelta(minutes=61)
 
 CONDITION_FOG_CLASSES = [
     11,
@@ -119,101 +129,76 @@ MS2KMH = 3.6
 
 PRECIPITATION_AMOUNT = (0, 2, 6, 16)
 
-DEVICE_CLASS_TPL = DOMAIN + "__{}"
+DEVICE_CLASS_FORMAT = DOMAIN + "__{}"
 
 SENSOR_TYPES = {
     "weather": {},  # => condition
     "condition": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TPL.format("condition"),
-        ATTR_ICON: None,
         ATTR_NAME: "Condition",
-        ATTR_UNIT_OF_MEASUREMENT: None,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_FORMAT.format("condition"),
     },
     "temperature": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_ICON: None,
         ATTR_NAME: "Temperature",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
-    "temperature_feeling": {
+    "temperature_feels_like": {
+        ATTR_NAME: "Temperature Feels Like",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_ICON: None,
-        ATTR_NAME: "Temperature Feeling",
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
     "humidity": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
-        ATTR_ICON: None,
         ATTR_NAME: "Humidity",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
     },
     "pressure": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
-        ATTR_ICON: None,
         ATTR_NAME: "Pressure",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
         ATTR_UNIT_OF_MEASUREMENT: PRESSURE_HPA,
     },
     "pressure_mmhg": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
-        ATTR_ICON: None,
         ATTR_NAME: "Pressure mmHg",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
         ATTR_UNIT_OF_MEASUREMENT: "mmHg",
     },
     "wind_speed": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-windy",
         ATTR_NAME: "Wind speed",
+        ATTR_ICON: "mdi:weather-windy",
         ATTR_UNIT_OF_MEASUREMENT: SPEED_METERS_PER_SECOND,
     },
     "wind_bearing": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-windy",
         ATTR_NAME: "Wind bearing",
+        ATTR_ICON: "mdi:weather-windy",
         ATTR_UNIT_OF_MEASUREMENT: DEGREE,
     },
     "clouds": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-partly-cloudy",
         ATTR_NAME: "Cloud coverage",
+        ATTR_ICON: "mdi:weather-partly-cloudy",
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
     },
     "rain": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-rainy",
         ATTR_NAME: "Rain",
+        ATTR_ICON: "mdi:weather-rainy",
         ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
     },
     "snow": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-snowy",
         ATTR_NAME: "Snow",
+        ATTR_ICON: "mdi:weather-snowy",
         ATTR_UNIT_OF_MEASUREMENT: LENGTH_MILLIMETERS,
     },
     "storm": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:weather-lightning",
         ATTR_NAME: "Storm",
-        ATTR_UNIT_OF_MEASUREMENT: None,
+        ATTR_ICON: "mdi:weather-lightning",
     },
     "geomagnetic": {
-        ATTR_DEVICE_CLASS: None,
-        ATTR_ICON: "mdi:magnet-on",
         ATTR_NAME: "Geomagnetic field",
+        ATTR_ICON: "mdi:magnet-on",
         ATTR_UNIT_OF_MEASUREMENT: "",
     },
     "water_temperature": {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_ICON: None,
         ATTR_NAME: "Water Temperature",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
 }
-FORECAST_SENSOR_TYPE = {
-    ATTR_DEVICE_CLASS: DEVICE_CLASS_TPL.format("condition"),
-    ATTR_ICON: None,
-    ATTR_NAME: "3h Forecast",
-    ATTR_UNIT_OF_MEASUREMENT: None,
-}
-
-COORDINATOR = "coordinator"
-UNDO_UPDATE_LISTENER = "undo_update_listener"

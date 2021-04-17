@@ -17,18 +17,18 @@ from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
 from homeassistant import config_entries
 from homeassistant.config_entries import SOURCE_IMPORT
-from homeassistant.const import (
-    CONF_LATITUDE,
-    CONF_LONGITUDE,
-    CONF_MODE,
-    CONF_NAME,
-    CONF_PLATFORM,
-)
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_NAME
 from homeassistant.core import callback
 
-from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
+from . import _get_api_client  # pylint: disable=unused-import
 from .api import ApiError
-from .const import CONF_FORECAST, FORECAST_MODE_DAILY, FORECAST_MODE_HOURLY, PLATFORMS
+from .const import (  # pylint: disable=unused-import
+    CONF_PLATFORM_FORMAT,
+    DOMAIN,
+    FORECAST_MODE_DAILY,
+    FORECAST_MODE_HOURLY,
+    PLATFORMS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 async with timeout(10):
-                    gismeteo = get_gismeteo(self.hass, user_input)
+                    gismeteo = _get_api_client(self.hass, user_input)
                     await gismeteo.async_update()
             except (ApiError, ClientConnectorError, asyncio.TimeoutError, ClientError):
                 self._errors["base"] = "cannot_connect"
@@ -131,8 +131,8 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
 
         schema = {
             vol.Required(
-                f"{CONF_PLATFORM}_{x}",
-                default=self.options.get(f"{CONF_PLATFORM}_{x}", True),
+                CONF_PLATFORM_FORMAT.format(x),
+                default=self.options.get(CONF_PLATFORM_FORMAT.format(x), True),
             ): bool
             for x in sorted(PLATFORMS)
         }
@@ -142,10 +142,6 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_MODE,
                     default=self.options.get(CONF_MODE, FORECAST_MODE_HOURLY),
                 ): vol.In([FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]),
-                vol.Required(
-                    CONF_FORECAST,
-                    default=self.options.get(CONF_FORECAST, False),
-                ): bool,
             }
         )
         return self.async_show_form(step_id="user", data_schema=vol.Schema(schema))

@@ -1,5 +1,5 @@
 # pylint: disable=protected-access,redefined-outer-name
-"""Test gismeteo config flow."""
+"""Tests for Gismeteo integration."""
 
 from unittest.mock import patch
 
@@ -10,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.gismeteo.const import (
-    CONF_FORECAST,
     DOMAIN,
     FORECAST_MODE_DAILY,
     PLATFORMS,
@@ -103,7 +102,6 @@ async def test_options_flow(hass: HomeAssistant):
     data.update(
         {
             CONF_MODE: FORECAST_MODE_DAILY,
-            CONF_FORECAST: True,
         }
     )
     result = await hass.config_entries.options.async_configure(
@@ -120,5 +118,4 @@ async def test_options_flow(hass: HomeAssistant):
         f"{CONF_PLATFORM}_{SENSOR}": False,
         f"{CONF_PLATFORM}_{WEATHER}": True,
         CONF_MODE: FORECAST_MODE_DAILY,
-        CONF_FORECAST: True,
     }

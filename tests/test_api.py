@@ -1,22 +1,13 @@
-# pylint: disable=protected-access
+# pylint: disable=protected-access,redefined-outer-name
+"""Tests for Gismeteo integration."""
 
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
-#  Creative Commons BY-NC-SA 4.0 International Public License
-#  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-
-"""
-Tests for the Gismeteo component.
-
-For more details about this platform, please refer to the documentation at
-https://github.com/Limych/ha-gismeteo/
-"""
 from typing import Any, Optional
 from unittest.mock import patch
 
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
-from homeassistant.const import ATTR_ID, ATTR_NAME, HTTP_OK
+from homeassistant.const import ATTR_ID, ATTR_NAME, HTTP_OK, STATE_UNKNOWN
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -64,7 +55,7 @@ async def test__valid_coordinates():
             GismeteoApiClient(client, latitude=lat_invalid[0], longitude=lon_invalid[0])
 
 
-def test__get():
+async def test__get():
     """Test _get service method."""
     data = {"qwe": 123, "asd": "sdf", "zxc": "789"}
 
@@ -182,6 +173,34 @@ async def init_gismeteo(
     return gismeteo
 
 
+async def test_api_init():
+    """Test data update."""
+    gismeteo = await init_gismeteo()
+
+    expected_current = {
+        "sunrise": 1613893140,
+        "sunset": 1613929620,
+        "condition": "Mainly cloudy, light snow",
+        "temperature": -7.0,
+        "pressure": 746,
+        "humidity": 86,
+        "wind_speed": 3,
+        "wind_bearing": 5,
+        "cloudiness": 3,
+        "precipitation_type": 2,
+        "precipitation_amount": 0.3,
+        "precipitation_intensity": 1,
+        "storm": False,
+        "gm_field": 3,
+        "phenomenon": 71,
+        "water_temperature": 3.0,
+    }
+
+    assert gismeteo.unique_id == f"{LOCATION_KEY}-hourly"
+    assert gismeteo.current == expected_current
+    assert gismeteo.attributes == {"id": LOCATION_KEY, "name": None}
+
+
 async def test_async_update():
     """Test data update."""
     gismeteo = await init_gismeteo()
@@ -199,7 +218,7 @@ async def test_async_update():
 
 
 async def test_condition():
-    """Test current condition."""
+    """Test condition."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.condition() == "snowy"
@@ -280,23 +299,27 @@ async def test_condition():
 
 
 async def test_temperature():
-    """Test current temperature."""
+    """Test temperature."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.temperature() == -7.0
     assert gismeteo.temperature(gismeteo.current) == -7.0
 
 
-async def test_temperature_feeling():
-    """Test current temperature feeling."""
+async def test_temperature_feels_like():
+    """Test temperature feels like."""
     gismeteo = await init_gismeteo()
 
-    assert gismeteo.temperature_feeling() == -12.3
-    assert gismeteo.temperature_feeling(gismeteo.current) == -12.3
+    assert gismeteo.temperature_feels_like() == -12.3
+    assert gismeteo.temperature_feels_like(gismeteo.current) == -12.3
+
+    for kind in ["temperature", "humidity", "wind_speed"]:
+        with patch.object(gismeteo, kind, return_value=STATE_UNKNOWN):
+            assert gismeteo.temperature_feels_like() == STATE_UNKNOWN
 
 
 async def test_water_temperature():
-    """Test current temperature of water."""
+    """Test temperature of water."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.water_temperature() == 3.0
@@ -304,23 +327,23 @@ async def test_water_temperature():
 
 
 async def test_pressure_mmhg():
-    """Test current pressure in mmHg."""
+    """Test pressure in mmHg."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.pressure_mmhg() == 746.0
     assert gismeteo.pressure_mmhg(gismeteo.current) == 746.0
 
 
-async def test_pressure_hpa():
-    """Test current pressure in hPa."""
+async def test_pressure():
+    """Test pressure in hPa."""
     gismeteo = await init_gismeteo()
 
-    assert gismeteo.pressure_hpa() == 994.6
-    assert gismeteo.pressure_hpa(gismeteo.current) == 994.6
+    assert gismeteo.pressure() == 994.6
+    assert gismeteo.pressure(gismeteo.current) == 994.6
 
 
 async def test_humidity():
-    """Test current humidity."""
+    """Test humidity."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.humidity() == 86
@@ -328,7 +351,7 @@ async def test_humidity():
 
 
 async def test_wind_bearing():
-    """Test current wind bearing."""
+    """Test wind bearing."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.wind_bearing() == 180
@@ -336,23 +359,23 @@ async def test_wind_bearing():
 
 
 async def test_wind_speed_kmh():
-    """Test current wind speed in km/h."""
+    """Test wind speed in km/h."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.wind_speed_kmh() == 10.8
     assert gismeteo.wind_speed_kmh(gismeteo.current) == 10.8
 
 
-async def test_wind_speed_ms():
-    """Test current wind speed in m/s."""
+async def test_wind_speed():
+    """Test wind speed in m/s."""
     gismeteo = await init_gismeteo()
 
-    assert gismeteo.wind_speed_ms() == 3.0
-    assert gismeteo.wind_speed_ms(gismeteo.current) == 3.0
+    assert gismeteo.wind_speed() == 3.0
+    assert gismeteo.wind_speed(gismeteo.current) == 3.0
 
 
 async def test_precipitation_amount():
-    """Test current precipitation amount."""
+    """Test precipitation amount."""
     gismeteo = await init_gismeteo()
 
     assert gismeteo.precipitation_amount() == 0.3

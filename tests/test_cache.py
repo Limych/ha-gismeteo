@@ -1,7 +1,6 @@
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
-
-# pylint: disable=redefined-outer-name,protected-access
+# pylint: disable=protected-access,redefined-outer-name
 """Tests for Cache controller."""
+
 import os
 import random
 from time import time

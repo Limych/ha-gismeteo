@@ -10,67 +10,24 @@ https://github.com/Limych/ha-gismeteo/
 
 import logging
 
-import voluptuous as vol
-from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
+from homeassistant.components.weather import WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
-from homeassistant.const import (
-    CONF_API_KEY,
-    CONF_LATITUDE,
-    CONF_LONGITUDE,
-    CONF_MODE,
-    CONF_NAME,
-    CONF_PLATFORM,
-    TEMP_CELSIUS,
-)
+from homeassistant.const import CONF_NAME, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
-from . import GismeteoDataUpdateCoordinator
+from . import GismeteoDataUpdateCoordinator, _convert_yaml_config
 from .const import (
     ATTRIBUTION,
-    CONF_CACHE_DIR,
-    CONF_YAML,
+    CONF_PLATFORM_FORMAT,
     COORDINATOR,
-    DEFAULT_NAME,
     DOMAIN,
-    FORECAST_MODE_DAILY,
-    FORECAST_MODE_HOURLY,
+    DOMAIN_YAML,
     WEATHER,
 )
 from .entity import GismeteoEntity
 
 _LOGGER = logging.getLogger(__name__)
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_API_KEY): cv.string,
-        vol.Optional(CONF_LATITUDE): cv.latitude,
-        vol.Optional(CONF_LONGITUDE): cv.longitude,
-        vol.Optional(CONF_MODE, default=FORECAST_MODE_HOURLY): vol.In(
-            [FORECAST_MODE_HOURLY, FORECAST_MODE_DAILY]
-        ),
-        vol.Optional(CONF_CACHE_DIR): cv.string,
-    }
-)
-
-
-# pylint: disable=unused-argument
-async def async_setup_platform(
-    hass: HomeAssistant, config, add_entities, discovery_info=None
-):
-    """Set up the Gismeteo weather platform."""
-    if CONF_YAML not in hass.data[DOMAIN]:
-        hass.data[DOMAIN].setdefault(CONF_YAML, {})
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN, context={"source": SOURCE_IMPORT}, data={}
-            )
-        )
-
-    uid = WEATHER + config[CONF_NAME]
-    config[CONF_PLATFORM] = WEATHER
-    hass.data[DOMAIN][CONF_YAML][uid] = config
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entities):
@@ -78,24 +35,29 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     entities = []
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
-        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            if cfg[CONF_PLATFORM] != WEATHER:
+        for uid, cfg in hass.data[DOMAIN_YAML].items():
+            cfg = _convert_yaml_config(cfg)
+
+            if cfg.get(CONF_PLATFORM_FORMAT.format(WEATHER), False) is False:
                 continue  # pragma: no cover
 
-            name = cfg[CONF_NAME]
+            location_name = cfg[CONF_NAME]
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-            entities.append(GismeteoWeather(name, coordinator))
+            entities.append(GismeteoWeather(location_name, coordinator))
 
     else:
         # Setup from config entry
-        config = config_entry.data.copy()  # type: dict
+        config = config_entry.data.copy()  # type: ConfigType
         config.update(config_entry.options)
 
-        name = config[CONF_NAME]
+        if config.get(CONF_PLATFORM_FORMAT.format(WEATHER), False) is False:
+            return  # pragma: no cover
+
+        location_name = config[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
-        entities.append(GismeteoWeather(name, coordinator))
+        entities.append(GismeteoWeather(location_name, coordinator))
 
     async_add_entities(entities, False)
 
@@ -141,7 +103,7 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
     @property
     def pressure(self):
         """Return the current pressure."""
-        return self._gismeteo.pressure_hpa()
+        return self._gismeteo.pressure()
 
     @property
     def humidity(self):
@@ -155,7 +117,7 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
 
     @property
     def wind_speed(self):
-        """Return the current windspeed."""
+        """Return the current wind speed."""
         return self._gismeteo.wind_speed_kmh()
 
     @property
