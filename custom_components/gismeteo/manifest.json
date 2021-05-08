@@ -1,15 +1,16 @@
 {
-    "domain": "gismeteo",
-    "name": "Gismeteo",
-    "version": "2.3.1",
-    "documentation": "https://github.com/Limych/ha-gismeteo",
-    "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
-    "dependencies": [
-        "weather"
-    ],
-    "config_flow": true,
-    "codeowners": [
-        "@Limych"
-    ],
-    "requirements": []
+  "domain": "gismeteo",
+  "name": "Gismeteo",
+  "version": "2.3.1",
+  "documentation": "https://github.com/Limych/ha-gismeteo",
+  "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
+  "dependencies": [
+    "weather"
+  ],
+  "config_flow": true,
+  "codeowners": [
+    "@Limych"
+  ],
+  "requirements": [],
+  "iot_class": "cloud_polling"
 }
