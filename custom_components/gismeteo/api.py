@@ -155,11 +155,6 @@ class GismeteoApiClient:
         return True
 
     @property
-    def unique_id(self):
-        """Return a unique_id."""
-        return f"{self._attributes[ATTR_ID]}-{self._mode}".lower()
-
-    @property
     def current(self):
         """Return current weather data."""
         return self._current

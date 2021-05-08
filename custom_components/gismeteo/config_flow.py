@@ -70,10 +70,6 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             except (ApiError, ClientConnectorError, asyncio.TimeoutError, ClientError):
                 self._errors["base"] = "cannot_connect"
             else:
-                await self.async_set_unique_id(
-                    gismeteo.unique_id, raise_on_progress=False
-                )
-
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )

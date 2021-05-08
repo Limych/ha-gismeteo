@@ -190,7 +190,7 @@ class GismeteoSensor(GismeteoEntity):
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return f"{self._gismeteo.unique_id}-{self._kind}".lower()
+        return f"{self.coordinator.unique_id}-{self._kind}".lower()
 
     @property
     def name(self):

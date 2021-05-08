@@ -10,12 +10,13 @@ https://github.com/Limych/ha-gismeteo/
 
 import asyncio
 import logging
+from typing import Optional
 
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
-from homeassistant.config_entries import SOURCE_IMPORT
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_MODE, CONF_PLATFORM
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -70,12 +71,12 @@ def get_gismeteo(hass: HomeAssistant, config) -> GismeteoApiClient:
     )
 
 
-async def _async_get_coordinator(hass: HomeAssistant, config: dict):
+async def _async_get_coordinator(hass: HomeAssistant, unique_id, config: dict):
     """Prepare update coordinator instance."""
     gismeteo = get_gismeteo(hass, config)
     await gismeteo.async_get_location()
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, gismeteo)
+    coordinator = GismeteoDataUpdateCoordinator(hass, unique_id, gismeteo)
     await coordinator.async_refresh()
 
     if not coordinator.last_update_success:
@@ -84,7 +85,7 @@ async def _async_get_coordinator(hass: HomeAssistant, config: dict):
     return coordinator
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up Gismeteo as config entry."""
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
@@ -94,7 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
 
         for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
             platforms.add(cfg[CONF_PLATFORM])
-            coordinator = await _async_get_coordinator(hass, cfg)
+            coordinator = await _async_get_coordinator(hass, uid, cfg)
             hass.data[DOMAIN][uid] = {
                 COORDINATOR: coordinator,
             }
@@ -112,7 +113,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry) -> bool:
 
         platforms = [x for x in PLATFORMS if config.get(f"{CONF_PLATFORM}_{x}", True)]
 
-        coordinator = await _async_get_coordinator(hass, config)
+        coordinator = await _async_get_coordinator(hass, config_entry.entry_id, config)
         undo_listener = config_entry.add_update_listener(update_listener)
         hass.data[DOMAIN][config_entry.entry_id] = {
             COORDINATOR: coordinator,
@@ -156,10 +157,19 @@ async def update_listener(hass: HomeAssistant, config_entry):
 class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Gismeteo data API."""
 
-    def __init__(self, hass: HomeAssistant, gismeteo: GismeteoApiClient):
+    def __init__(
+        self, hass: HomeAssistant, unique_id: Optional[str], gismeteo: GismeteoApiClient
+    ):
         """Initialize."""
-        self.gismeteo = gismeteo
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
+
+        self.gismeteo = gismeteo
+        self._unique_id = unique_id
+
+    @property
+    def unique_id(self):
+        """Return a unique_id."""
+        return self._unique_id
 
     async def _async_update_data(self):
         """Update data via library."""

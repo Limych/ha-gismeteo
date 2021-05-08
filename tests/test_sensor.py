@@ -21,6 +21,8 @@ from custom_components.gismeteo.const import (
 )
 from custom_components.gismeteo.sensor import GismeteoSensor, fix_kinds
 
+from tests.const import MOCK_UNIQUE_ID
+
 
 async def test_fix_kinds(caplog):
     """Test fix_kinds function."""
@@ -53,11 +55,10 @@ async def test_fix_kinds(caplog):
 async def test_sensor_initialization(hass: HomeAssistant):
     """Test sensor initialization."""
     mock_api = Mock()
-    mock_api.unique_id = "qwe"
     mock_api.condition = Mock(return_value="asd")
     mock_api.attributes = {}
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, mock_api)
+    coordinator = GismeteoDataUpdateCoordinator(hass, MOCK_UNIQUE_ID, mock_api)
     sensor = GismeteoSensor("Test", "condition", coordinator)
 
     expected_attributes = {
@@ -65,7 +66,7 @@ async def test_sensor_initialization(hass: HomeAssistant):
     }
 
     assert sensor.name == "Test Condition"
-    assert sensor.unique_id == "qwe-condition"
+    assert sensor.unique_id == f"{MOCK_UNIQUE_ID}-condition"
     assert sensor.should_poll is False
     assert sensor.available is True
     assert sensor.state == "asd"

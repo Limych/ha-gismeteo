@@ -111,7 +111,7 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return self._gismeteo.unique_id
+        return self.coordinator.unique_id
 
     @property
     def name(self):
