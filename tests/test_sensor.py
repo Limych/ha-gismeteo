@@ -14,6 +14,8 @@ from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import ATTRIBUTION
 from custom_components.gismeteo.sensor import GismeteoSensor, _fix_kinds, _gen_entities
 
+from tests.const import MOCK_UNIQUE_ID
+
 
 async def test__fix_kinds(caplog):
     """Test fix_kinds function."""
@@ -68,19 +70,18 @@ async def test__gen_entities(mock_coordinator):
 async def test_entity_initialization(hass: HomeAssistant):
     """Test entity initialization."""
     mock_api = Mock()
-    mock_api.unique_id = "qwe"
     mock_api.temperature = Mock(return_value="asd")
     mock_api.attributes = {}
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, mock_api)
+    coordinator = GismeteoDataUpdateCoordinator(hass, MOCK_UNIQUE_ID, mock_api)
     sensor = GismeteoSensor("Test", "temperature", coordinator)
 
     expected_attributes = {
         ATTR_ATTRIBUTION: ATTRIBUTION,
     }
 
-    assert sensor.unique_id == "qwe-temperature"
     assert sensor.name == "Test Temperature"
+    assert sensor.unique_id == f"{MOCK_UNIQUE_ID}-temperature"
     assert sensor.should_poll is False
     assert sensor.available is True
     assert sensor.state == "asd"

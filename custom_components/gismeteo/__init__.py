@@ -10,7 +10,7 @@ https://github.com/Limych/ha-gismeteo/
 
 import asyncio
 import logging
-from typing import List
+from typing import List, Optional
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -126,12 +126,12 @@ def _get_api_client(hass: HomeAssistant, config: ConfigType) -> GismeteoApiClien
     )
 
 
-async def _async_get_coordinator(hass: HomeAssistant, config: ConfigType):
+async def _async_get_coordinator(hass: HomeAssistant, unique_id, config: dict):
     """Prepare update coordinator instance."""
     gismeteo = _get_api_client(hass, config)
     await gismeteo.async_update_location()
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, gismeteo)
+    coordinator = GismeteoDataUpdateCoordinator(hass, unique_id, gismeteo)
     await coordinator.async_refresh()
 
     if not coordinator.last_update_success:
@@ -173,7 +173,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
             platforms.update(_get_platforms(cfg))
 
-            coordinator = await _async_get_coordinator(hass, cfg)
+            coordinator = await _async_get_coordinator(hass, uid, cfg)
             hass.data[DOMAIN][uid] = {
                 COORDINATOR: coordinator,
             }
@@ -191,7 +191,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
         platforms = _get_platforms(config)
 
-        coordinator = await _async_get_coordinator(hass, config)
+        coordinator = await _async_get_coordinator(hass, config_entry.entry_id, config)
         undo_listener = config_entry.add_update_listener(update_listener)
         hass.data[DOMAIN][config_entry.entry_id] = {
             COORDINATOR: coordinator,
@@ -233,10 +233,19 @@ async def update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
 class GismeteoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Gismeteo data API."""
 
-    def __init__(self, hass: HomeAssistant, gismeteo: GismeteoApiClient):
+    def __init__(
+        self, hass: HomeAssistant, unique_id: Optional[str], gismeteo: GismeteoApiClient
+    ):
         """Initialize."""
-        self.gismeteo = gismeteo
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
+
+        self.gismeteo = gismeteo
+        self._unique_id = unique_id
+
+    @property
+    def unique_id(self):
+        """Return a unique_id."""
+        return self._unique_id
 
     async def _async_update_data(self):
         """Update data via library."""

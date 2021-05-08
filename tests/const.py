@@ -15,6 +15,8 @@ from custom_components.gismeteo.const import (
     WEATHER,
 )
 
+MOCK_UNIQUE_ID = "test_id"
+
 MOCK_CONFIG = {
     CONF_NAME: "Home",
     CONF_LATITUDE: 55.55,

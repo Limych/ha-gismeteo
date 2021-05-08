@@ -257,7 +257,6 @@ async def test_api_init():
         "uv_index": 2,
     }
 
-    assert gismeteo.unique_id == f"{LOCATION_KEY}-hourly"
     assert gismeteo.attributes == {"id": LOCATION_KEY}
     assert gismeteo.current_data == expected_current
     assert gismeteo.forecast_data(0) == expected_forecast

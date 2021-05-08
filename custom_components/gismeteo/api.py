@@ -164,11 +164,6 @@ class GismeteoApiClient:
         return True
 
     @property
-    def unique_id(self):
-        """Return a unique_id."""
-        return f"{self._attributes[ATTR_ID]}-{self._mode}".lower()
-
-    @property
     def attributes(self):
         """Return an attributes."""
         return self._attributes
