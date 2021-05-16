@@ -119,6 +119,7 @@ def _get_api_client(hass: HomeAssistant, config: ConfigType) -> GismeteoApiClien
         longitude=config.get(CONF_LONGITUDE, hass.config.longitude),
         mode=config.get(CONF_MODE, FORECAST_MODE_HOURLY),
         params={
+            "domain": DOMAIN,
             "timezone": str(hass.config.time_zone),
             "cache_dir": config.get(CONF_CACHE_DIR, hass.config.path(STORAGE_DIR)),
             "cache_time": UPDATE_INTERVAL.total_seconds(),
