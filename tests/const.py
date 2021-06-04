@@ -3,6 +3,7 @@
 from homeassistant.const import (
     CONF_LATITUDE,
     CONF_LONGITUDE,
+    CONF_MODE,
     CONF_MONITORED_CONDITIONS,
     CONF_NAME,
     CONF_SENSORS,
@@ -11,29 +12,33 @@ from homeassistant.const import (
 from custom_components.gismeteo.const import (
     CONF_PLATFORM_FORMAT,
     CONF_WEATHER,
+    FORECAST_MODE_HOURLY,
     SENSOR,
     WEATHER,
 )
 
-MOCK_UNIQUE_ID = "test_id"
+FAKE_NAME = "Home"
+FAKE_UNIQUE_ID = "test_id"
+FAKE_LATITUDE = 55.55
+FAKE_LONGITUDE = 122.12
 
-MOCK_CONFIG = {
-    CONF_NAME: "Home",
-    CONF_LATITUDE: 55.55,
-    CONF_LONGITUDE: 122.12,
+FAKE_CONFIG = {
+    CONF_NAME: FAKE_NAME,
+    CONF_LATITUDE: FAKE_LATITUDE,
+    CONF_LONGITUDE: FAKE_LONGITUDE,
 }
 
-MOCK_CONFIG_OPTIONS = {
+FAKE_CONFIG_OPTIONS = {
     CONF_PLATFORM_FORMAT.format(WEATHER): True,
     CONF_PLATFORM_FORMAT.format(SENSOR): True,
 }
 
-MOCK_CONFIG_YAML = {
+FAKE_CONFIG_YAML = {
     "home": {
-        CONF_NAME: "Home",
-        CONF_LATITUDE: 55.55,
-        CONF_LONGITUDE: 122.12,
-        CONF_WEATHER: {},
+        CONF_NAME: FAKE_NAME,
+        CONF_LATITUDE: FAKE_LATITUDE,
+        CONF_LONGITUDE: FAKE_LONGITUDE,
+        CONF_WEATHER: {CONF_MODE: FORECAST_MODE_HOURLY},
         CONF_SENSORS: {CONF_MONITORED_CONDITIONS: ["condition"]},
     },
 }

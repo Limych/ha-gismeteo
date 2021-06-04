@@ -9,7 +9,7 @@ from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import ATTRIBUTION
 from custom_components.gismeteo.weather import GismeteoWeather
 
-from tests.const import MOCK_UNIQUE_ID
+from tests.const import FAKE_UNIQUE_ID
 
 
 async def test_entity_initialization(hass: HomeAssistant):
@@ -18,11 +18,11 @@ async def test_entity_initialization(hass: HomeAssistant):
     mock_api.condition = Mock(return_value="asd")
     mock_api.attributes = {}
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, MOCK_UNIQUE_ID, mock_api)
+    coordinator = GismeteoDataUpdateCoordinator(hass, FAKE_UNIQUE_ID, mock_api)
     entity = GismeteoWeather("Test", coordinator)
 
     assert entity.name == "Test"
-    assert entity.unique_id == MOCK_UNIQUE_ID
+    assert entity.unique_id == FAKE_UNIQUE_ID
     assert entity.attribution == ATTRIBUTION
     assert entity.condition == "asd"
     assert entity.temperature_unit == TEMP_CELSIUS

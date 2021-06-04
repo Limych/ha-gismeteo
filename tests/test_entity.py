@@ -9,7 +9,7 @@ from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import DOMAIN, NAME
 from custom_components.gismeteo.entity import GismeteoEntity
 
-from tests.const import MOCK_UNIQUE_ID
+from tests.const import FAKE_UNIQUE_ID
 
 
 async def test_entity_initialization(hass: HomeAssistant):
@@ -17,9 +17,9 @@ async def test_entity_initialization(hass: HomeAssistant):
     mock_api = Mock()
     mock_api.attributes = {ATTR_ID: "asd"}
 
-    coordinator = GismeteoDataUpdateCoordinator(hass, MOCK_UNIQUE_ID, mock_api)
+    coordinator = GismeteoDataUpdateCoordinator(hass, FAKE_UNIQUE_ID, mock_api)
 
-    assert coordinator.unique_id == MOCK_UNIQUE_ID
+    assert coordinator.unique_id == FAKE_UNIQUE_ID
 
     entity = GismeteoEntity("Test", coordinator)
 

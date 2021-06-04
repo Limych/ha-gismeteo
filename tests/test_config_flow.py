@@ -17,7 +17,7 @@ from custom_components.gismeteo.const import (
     WEATHER,
 )
 
-from .const import MOCK_CONFIG
+from .const import FAKE_CONFIG
 
 
 # This fixture bypasses the actual setup of the integration
@@ -50,14 +50,14 @@ async def test_successful_config_flow(hass: HomeAssistant, bypass_get_data):
     # If a user were to enter `test_username` for username and `test_password`
     # for password, it would result in this function call
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input=MOCK_CONFIG
+        result["flow_id"], user_input=FAKE_CONFIG
     )
 
     # Check that the config flow is complete and a new entry is created with
     # the input data
     assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result["title"] == MOCK_CONFIG[CONF_NAME]
-    assert result["data"] == MOCK_CONFIG
+    assert result["title"] == FAKE_CONFIG[CONF_NAME]
+    assert result["data"] == FAKE_CONFIG
     assert result["result"]
 
 
@@ -75,7 +75,7 @@ async def test_failed_config_flow(hass: HomeAssistant, error_on_get_data):
     assert result["step_id"] == "user"
 
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input=MOCK_CONFIG
+        result["flow_id"], user_input=FAKE_CONFIG
     )
 
     assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
@@ -87,7 +87,7 @@ async def test_options_flow(hass: HomeAssistant):
     """Test an options flow."""
     # Create a new MockConfigEntry and add to HASS (we're bypassing config
     # flow entirely)
-    entry = MockConfigEntry(domain=DOMAIN, data=MOCK_CONFIG, entry_id="test")
+    entry = MockConfigEntry(domain=DOMAIN, data=FAKE_CONFIG, entry_id="test")
     entry.add_to_hass(hass)
 
     # Initialize an options flow
@@ -111,7 +111,7 @@ async def test_options_flow(hass: HomeAssistant):
 
     # Verify that the flow finishes
     assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result["title"] == MOCK_CONFIG[CONF_NAME]
+    assert result["title"] == FAKE_CONFIG[CONF_NAME]
 
     # Verify that the options were updated
     assert entry.options == {
