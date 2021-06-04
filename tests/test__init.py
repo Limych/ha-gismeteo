@@ -4,11 +4,7 @@
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import (
-    ENTRY_STATE_LOADED,
-    ENTRY_STATE_NOT_LOADED,
-    ENTRY_STATE_SETUP_RETRY,
-)
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_MODE, CONF_NAME, CONF_SENSORS
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
@@ -160,7 +156,7 @@ async def test_config_not_ready(hass: HomeAssistant, gismeteo_config_entry):
         gismeteo_config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(gismeteo_config_entry.entry_id)
 
-        assert gismeteo_config_entry.state == ENTRY_STATE_SETUP_RETRY
+        assert gismeteo_config_entry.state == ConfigEntryState.SETUP_RETRY
 
 
 async def test_unload_entry(hass: HomeAssistant, gismeteo_config_entry, gismeteo_api):
@@ -168,10 +164,10 @@ async def test_unload_entry(hass: HomeAssistant, gismeteo_config_entry, gismeteo
     entry = await async_gismeteo_setup(hass, gismeteo_config_entry)
 
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
-    assert entry.state == ENTRY_STATE_LOADED
+    assert entry.state == ConfigEntryState.LOADED
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert entry.state == ENTRY_STATE_NOT_LOADED
+    assert entry.state == ConfigEntryState.NOT_LOADED
     assert not hass.data.get(DOMAIN)
