@@ -136,11 +136,6 @@ class GismeteoApiClient:
 
         self._current = {}
         self._forecast = []
-        self._timezone = (
-            dt_util.get_time_zone(params.get("timezone"))
-            if params.get("timezone") is not None
-            else dt_util.DEFAULT_TIME_ZONE
-        )
 
     @staticmethod
     def _valid_coordinates(latitude: float, longitude: float) -> bool:
@@ -232,7 +227,7 @@ class GismeteoApiClient:
             return None
         if cld == 0:
             if self._mode == FORECAST_MODE_DAILY or self._is_day(
-                src.get(ATTR_FORECAST_TIME, time.time()),
+                dt_util.as_timestamp(src.get(ATTR_FORECAST_TIME, time.time())),
                 src.get(ATTR_SUNRISE),
                 src.get(ATTR_SUNSET),
             ):
@@ -346,17 +341,13 @@ class GismeteoApiClient:
         """Return the forecast array."""
         src = src or self._forecast
         forecast = []
-        now = int(time.time())
-        dt_util.set_default_time_zone(self._timezone)
         for i in src:
             fc_time = i.get(ATTR_FORECAST_TIME)
             if fc_time is None:
                 continue
 
             data = {
-                ATTR_FORECAST_TIME: dt_util.as_local(
-                    datetime.utcfromtimestamp(fc_time)
-                ).isoformat(),
+                ATTR_FORECAST_TIME: fc_time,
                 ATTR_FORECAST_CONDITION: self.condition(i),
                 ATTR_FORECAST_TEMP: self.temperature(i),
                 ATTR_FORECAST_PRESSURE: self.pressure_hpa(i),
@@ -372,7 +363,7 @@ class GismeteoApiClient:
             ):
                 data[ATTR_FORECAST_TEMP_LOW] = i.get(ATTR_FORECAST_TEMP_LOW)
 
-            if fc_time < now:
+            if fc_time < dt_util.now():
                 forecast = [data]
             else:
                 forecast.append(data)
@@ -386,7 +377,7 @@ class GismeteoApiClient:
             local_date += "T00:00:00"
         tz_h, tz_m = divmod(abs(tzone), 60)
         local_date += f"+{tz_h:02}:{tz_m:02}" if tzone >= 0 else f"-{tz_h:02}:{tz_m:02}"
-        return dt_util.as_timestamp(local_date)
+        return dt_util.parse_datetime(local_date)
 
     async def async_update(self) -> bool:
         """Get the latest data from Gismeteo."""
