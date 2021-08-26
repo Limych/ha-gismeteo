@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture
 
-from custom_components.gismeteo import _convert_yaml_config
+from custom_components.gismeteo import _convert_yaml_config, deslugify
 from custom_components.gismeteo.api import ApiError, GismeteoApiClient
 from custom_components.gismeteo.const import (
     CONF_PLATFORM_FORMAT,
@@ -27,6 +27,13 @@ from .const import (
     FAKE_NAME,
     FAKE_UNIQUE_ID,
 )
+
+
+async def test_deslugify():
+    """Test deslugify string."""
+    assert deslugify("") == ""
+    assert deslugify("qwe") == "Qwe"
+    assert deslugify("asd_zxc__qwe") == "Asd zxc  qwe"
 
 
 async def async_init_integration(

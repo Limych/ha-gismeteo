@@ -16,7 +16,7 @@ from homeassistant.const import CONF_NAME, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from . import GismeteoDataUpdateCoordinator, _convert_yaml_config
+from . import GismeteoDataUpdateCoordinator, _convert_yaml_config, deslugify
 from .const import (
     ATTRIBUTION,
     CONF_PLATFORM_FORMAT,
@@ -41,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
             if cfg.get(CONF_PLATFORM_FORMAT.format(WEATHER), False) is False:
                 continue  # pragma: no cover
 
-            location_name = cfg[CONF_NAME]
+            location_name = cfg.get(CONF_NAME, deslugify(uid))
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
             entities.append(GismeteoWeather(location_name, coordinator))

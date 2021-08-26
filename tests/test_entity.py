@@ -21,12 +21,12 @@ async def test_entity_initialization(hass: HomeAssistant):
 
     assert coordinator.unique_id == FAKE_UNIQUE_ID
 
-    entity = GismeteoEntity("Test", coordinator)
+    entity = GismeteoEntity("Test location", coordinator)
 
     assert entity._gismeteo is mock_api
     assert entity.device_info == {
         "identifiers": {(DOMAIN, "asd")},
-        "name": NAME,
+        "name": "Test location",
         "manufacturer": NAME,
         "model": "Forecast",
     }

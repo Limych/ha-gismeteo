@@ -8,20 +8,6 @@ logger:
 # If you need to debug uncomment the line below (doc: https://www.home-assistant.io/integrations/debugpy/)
 # debugpy:
 
-#sensor:
-#  - platform: gismeteo
-#    name: Sweet Home
-#    monitored_conditions:
-#      - temperature
-#      - humidity
-#
-#weather:
-#  - platform: gismeteo
-#    name: Sweet Home
-#    latitude: ...
-#    longitude: ...
-#    mode: hourly  # Default value
-
 gismeteo:
   sweet_home:
     weather: {}
@@ -32,8 +18,8 @@ gismeteo:
 
   dacha:
     name: Our Country House
-#    latitude: ...
-#    longitude: ...
+    latitude: 46.0561601
+    longitude: 13.1741225
     sensors:
       monitored_conditions:
         - temperature

@@ -24,9 +24,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
-from . import GismeteoDataUpdateCoordinator, _convert_yaml_config
+from . import GismeteoDataUpdateCoordinator, _convert_yaml_config, deslugify
 from .const import (
     ATTRIBUTION,
+    CONF_FORECAST_DAYS,
     CONF_PLATFORM_FORMAT,
     COORDINATOR,
     DOMAIN,
@@ -67,14 +68,25 @@ def _gen_entities(
     """Generate entities."""
     entities = []
 
-    _LOGGER.debug(config)
-    for kind in _fix_kinds(
+    kinds = _fix_kinds(
         config.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
         warn=warn,
-    ):
+    )
+
+    for kind in kinds:
         entities.append(GismeteoSensor(location_name, kind, coordinator))
         if kind == "pressure":
             entities.append(GismeteoSensor(location_name, "pressure_mmhg", coordinator))
+
+    days = config.get(CONF_FORECAST_DAYS)
+    if days is not None:
+        for day in range(days + 1):
+            for kind in kinds:
+                entities.append(GismeteoSensor(location_name, kind, coordinator, day))
+                if kind == "pressure":
+                    entities.append(
+                        GismeteoSensor(location_name, "pressure_mmhg", coordinator, day)
+                    )
 
     return entities
 
@@ -92,7 +104,7 @@ async def async_setup_entry(
             if cfg.get(CONF_PLATFORM_FORMAT.format(SENSOR), False) is False:
                 continue  # pragma: no cover
 
-            location_name = cfg[CONF_NAME]
+            location_name = cfg.get(CONF_NAME, deslugify(uid))
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
             entities.extend(_gen_entities(location_name, coordinator, cfg, True))
@@ -121,21 +133,30 @@ class GismeteoSensor(GismeteoEntity):
         location_name: str,
         kind: str,
         coordinator: GismeteoDataUpdateCoordinator,
+        day: Optional[int] = None,
     ):
         """Initialize the sensor."""
         super().__init__(location_name, coordinator)
 
         self._kind = kind
+        self._day = day
 
     @property
     def unique_id(self):
         """Return a unique_id for this entity."""
-        return f"{self.coordinator.unique_id}-{self._kind}".lower()
+        return (
+            f"{self.coordinator.unique_id}-{self._kind}"
+            if self._day is None
+            else f"{self.coordinator.unique_id}-{self._day}-{self._kind}"
+        ).lower()
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{self._location_name} {SENSOR_TYPES[self._kind][ATTR_NAME]}"
+        name = f"{self._location_name} {SENSOR_TYPES[self._kind][ATTR_NAME]}"
+        if self._day is not None:
+            name += f" {self._day}d"
+        return name
 
     @property
     def state(self):

@@ -92,6 +92,11 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
+def deslugify(text: str):
+    """Deslugify string."""
+    return text.replace("_", " ").capitalize()
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up component."""
     if DOMAIN not in hass.data:

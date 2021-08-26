@@ -20,6 +20,9 @@
         }
     },
     "options": {
+        "abort": {
+            "no_options_available": "Конфигурация, созданная через configuration.yaml, не может быть изменена через пользовательский интерфейс."
+        },
         "step": {
             "user": {
                 "data": {

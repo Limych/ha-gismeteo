@@ -20,6 +20,9 @@
         }
     },
     "options": {
+        "abort": {
+            "no_options_available": "Configuration created via configuration.yaml cannot be changed via UI."
+        },
         "step": {
             "user": {
                 "data": {

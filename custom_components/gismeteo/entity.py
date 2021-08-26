@@ -33,7 +33,7 @@ class GismeteoEntity(CoordinatorEntity):
         """Return the device info."""
         return {
             "identifiers": {(DOMAIN, self._gismeteo.attributes[ATTR_ID])},
-            "name": NAME,
+            "name": self._location_name,
             "manufacturer": NAME,
             "model": "Forecast",
         }

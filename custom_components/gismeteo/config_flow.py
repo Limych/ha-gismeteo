@@ -117,6 +117,9 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
         """Manage the options."""
+        if self.config_entry.source == config_entries.SOURCE_IMPORT:
+            return self.async_abort(reason="no_options_available")
+
         return await self.async_step_user()
 
     async def async_step_user(self, user_input=None):

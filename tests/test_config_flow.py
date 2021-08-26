@@ -119,3 +119,22 @@ async def test_options_flow(hass: HomeAssistant):
         f"{CONF_PLATFORM}_{WEATHER}": True,
         CONF_MODE: FORECAST_MODE_DAILY,
     }
+
+
+async def test_options_flow_fail(hass: HomeAssistant):
+    """Test an options flow."""
+    # Create a new MockConfigEntry and add to HASS (we're bypassing config
+    # flow entirely)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=FAKE_CONFIG,
+        entry_id="test",
+        source=config_entries.SOURCE_IMPORT,
+    )
+    entry.add_to_hass(hass)
+
+    # Initialize an options flow
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["reason"] == "no_options_available"
