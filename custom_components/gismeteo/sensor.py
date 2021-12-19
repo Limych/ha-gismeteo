@@ -273,7 +273,7 @@ class GismeteoSensor(GismeteoEntity):
         return SENSOR_TYPES[self._kind][ATTR_DEVICE_CLASS]
 
     @property
-    def device_state_attributes(self) -> Optional[Dict[str, Any]]:
+    def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
         """Return the state attributes."""
         attrs = self._gismeteo.attributes.copy()
         attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
