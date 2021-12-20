@@ -16,9 +16,11 @@ from unittest.mock import patch
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
-from homeassistant.const import ATTR_ID, ATTR_NAME, HTTP_OK
+from homeassistant.const import ATTR_ID, ATTR_NAME
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
+
+from http import HTTPStatus
 
 from custom_components.gismeteo.api import (
     ApiError,
@@ -79,7 +81,7 @@ def test__get():
 @patch("aiohttp.ClientSession.get")
 async def test__async_get_data(mock_get):
     """Test with valid location data."""
-    mock_get.return_value.__aenter__.return_value.status = HTTP_OK
+    mock_get.return_value.__aenter__.return_value.status = HTTPStatus.OK
     mock_get.return_value.__aenter__.return_value.text = CoroutineMock(
         return_value="qwe"
     )
