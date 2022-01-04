@@ -12,6 +12,7 @@ import logging
 import math
 import time
 import xml.etree.ElementTree as etree  # type: ignore
+from http import HTTPStatus
 from datetime import datetime
 from typing import Any, Callable, Optional
 
@@ -48,7 +49,6 @@ from homeassistant.const import (
     ATTR_LATITUDE,
     ATTR_LONGITUDE,
     ATTR_NAME,
-    HTTP_OK,
     STATE_UNKNOWN,
 )
 from homeassistant.util import dt as dt_util
@@ -175,7 +175,7 @@ class GismeteoApiClient:
                 return self._cache.read_cache(cache_fname)
 
         async with self._session.get(url) as resp:
-            if resp.status != HTTP_OK:
+            if resp.status != HTTPStatus.HTTP_OK:
                 raise ApiError(f"Invalid response from Gismeteo API: {resp.status}")
             _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
             data = await resp.text()
