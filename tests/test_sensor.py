@@ -72,7 +72,7 @@ async def test_sensor_initialization(hass: HomeAssistant):
     assert sensor.state == "asd"
     assert sensor.unit_of_measurement is None
     assert sensor.icon is None
-    assert sensor.device_state_attributes == expected_attributes
+    assert sensor.extra_state_attributes == expected_attributes
 
 
 async def test_async_setup_platform(hass: HomeAssistant, gismeteo_api):
