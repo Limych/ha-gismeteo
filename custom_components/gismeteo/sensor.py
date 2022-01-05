@@ -182,20 +182,17 @@ class GismeteoSensor(GismeteoEntity):
     ):
         """Initialize the sensor."""
         super().__init__(location_name, coordinator)
+
         self._kind = kind
-        self._unit_of_measurement = SENSOR_TYPES[self._kind][ATTR_UNIT_OF_MEASUREMENT]
+
+        self._attr_unique_id = f"{self.coordinator.unique_id}-{kind}".lower()
+
+        self._attr_device_class = SENSOR_TYPES[kind][ATTR_DEVICE_CLASS]
+        self._attr_icon = SENSOR_TYPES[kind][ATTR_ICON]
+        self._attr_name = f"{self._location_name} {SENSOR_TYPES[kind][ATTR_NAME]}"
+        self._attr_unit_of_measurement = SENSOR_TYPES[kind][ATTR_UNIT_OF_MEASUREMENT]
 
         self._state = None
-
-    @property
-    def unique_id(self):
-        """Return a unique_id for this entity."""
-        return f"{self.coordinator.unique_id}-{self._kind}".lower()
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"{self._location_name} {SENSOR_TYPES[self._kind][ATTR_NAME]}"
 
     @property
     def state(self):
@@ -256,21 +253,6 @@ class GismeteoSensor(GismeteoEntity):
             _LOGGER.warning("Condition is currently not available: %s", self._kind)
 
         return self._state
-
-    @property
-    def unit_of_measurement(self) -> Optional[str]:
-        """Return the unit of measurement of this entity, if any."""
-        return self._unit_of_measurement
-
-    @property
-    def icon(self) -> Optional[str]:
-        """Return the icon to use in the frontend, if any."""
-        return SENSOR_TYPES[self._kind][ATTR_ICON]
-
-    @property
-    def device_class(self) -> Optional[str]:
-        """Return the device_class."""
-        return SENSOR_TYPES[self._kind][ATTR_DEVICE_CLASS]
 
     @property
     def extra_state_attributes(self) -> Optional[Dict[str, Any]]:

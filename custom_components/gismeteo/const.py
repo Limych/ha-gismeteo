@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.3.4"
+VERSION = "2.3.5-alpha"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 
@@ -62,6 +62,8 @@ FORECAST_MODE_DAILY = "daily"
 DEFAULT_NAME = "Gismeteo"
 
 # Attributes
+ATTR_LAST_UPDATED = "last_updated"
+#
 ATTR_SUNRISE = "sunrise"
 ATTR_SUNSET = "sunset"
 #
@@ -89,6 +91,8 @@ ATTR_FORECAST_PHENOMENON = ATTR_WEATHER_PHENOMENON
 ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
 
 UPDATE_INTERVAL = timedelta(minutes=5)
+LOCATION_MAX_CACHE_INTERVAL = timedelta(days=7)
+FORECAST_MAX_CACHE_INTERVAL = timedelta(hours=3)
 
 CONDITION_FOG_CLASSES = [
     11,

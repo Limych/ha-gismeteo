@@ -1,7 +1,7 @@
 {
   "domain": "gismeteo",
   "name": "Gismeteo",
-  "version": "2.3.4",
+  "version": "2.3.5-alpha",
   "documentation": "https://github.com/Limych/ha-gismeteo",
   "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
   "dependencies": [

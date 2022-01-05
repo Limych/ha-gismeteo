@@ -9,11 +9,13 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
+from typing import Any, Dict, Optional
 
 import voluptuous as vol
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
+    ATTR_ATTRIBUTION,
     CONF_API_KEY,
     CONF_LATITUDE,
     CONF_LONGITUDE,
@@ -162,3 +164,10 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
     def forecast(self):
         """Return the forecast array."""
         return self._gismeteo.forecast()
+
+    @property
+    def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
+        """Return the state attributes."""
+        attrs = self._gismeteo.attributes.copy()
+        attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
+        return attrs

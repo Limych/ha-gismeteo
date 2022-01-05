@@ -63,6 +63,7 @@ from .const import (
     ATTR_FORECAST_PRECIPITATION_TYPE,
     ATTR_FORECAST_PRESSURE,
     ATTR_FORECAST_STORM,
+    ATTR_LAST_UPDATED,
     ATTR_SUNRISE,
     ATTR_SUNSET,
     ATTR_WEATHER_CLOUDINESS,
@@ -76,8 +77,10 @@ from .const import (
     ATTR_WEATHER_WATER_TEMPERATURE,
     CONDITION_FOG_CLASSES,
     ENDPOINT_URL,
+    FORECAST_MAX_CACHE_INTERVAL,
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
+    LOCATION_MAX_CACHE_INTERVAL,
     MMHG2HPA,
     MS2KMH,
 )
@@ -134,6 +137,7 @@ class GismeteoApiClient:
             ATTR_ID: location_key,
         }
 
+        self._last_updated = None
         self._current = {}
         self._forecast = []
         self._timezone = (
@@ -155,6 +159,11 @@ class GismeteoApiClient:
         return True
 
     @property
+    def last_updated(self):
+        """Return timestamp of last update of weather data."""
+        return self._last_updated
+
+    @property
     def current(self):
         """Return current weather data."""
         return self._current
@@ -164,23 +173,35 @@ class GismeteoApiClient:
         """Return forecast attributes."""
         return self._attributes
 
-    async def _async_get_data(self, url: str, cache_fname=None) -> str:
+    async def _async_get_data(
+        self, url: str, cache_fname=None, max_cache_time=0
+    ) -> str:
         """Retreive data from Gismeteo API and cache results."""
         _LOGGER.debug("Requesting URL %s", url)
 
+        data = None
+        data_cached = None
+        data_is_cached = False
+
         if self._cache and cache_fname is not None:
             cache_fname += ".xml"
-            if self._cache.is_cached(cache_fname):
-                _LOGGER.debug("Cached response used")
-                return self._cache.read_cache(cache_fname)
+            data_cached = self._cache.read_cache(cache_fname, max_cache_time)
+            data_is_cached = self._cache.is_cached(cache_fname)
 
-        async with self._session.get(url) as resp:
-            if resp.status != HTTPStatus.OK:
-                raise ApiError(f"Invalid response from Gismeteo API: {resp.status}")
-            _LOGGER.debug("Data retrieved from %s, status: %s", url, resp.status)
-            data = await resp.text()
+        if not data_is_cached:
+            async with self._session.get(url) as resp:
+                if resp.status != HTTPStatus.OK:
+                    _LOGGER.error("Invalid response from Gismeteo API: %s", resp.status)
+                else:
+                    _LOGGER.debug(
+                        "Data retrieved from %s, status: %s", url, resp.status
+                    )
+                    data = await resp.text()
 
-        if self._cache and cache_fname is not None and data:
+        if not data and data_cached:
+            _LOGGER.debug("Cached response used")
+            data = data_cached
+        elif self._cache and cache_fname is not None and data:
             self._cache.save_cache(cache_fname, data)
 
         return data
@@ -193,7 +214,9 @@ class GismeteoApiClient:
         )
         cache_fname = f"location_{self._latitude}_{self._longitude}"
 
-        response = await self._async_get_data(url, cache_fname)
+        response = await self._async_get_data(
+            url, cache_fname, LOCATION_MAX_CACHE_INTERVAL.total_seconds()
+        )
         try:
             xml = etree.fromstring(response)
             item = xml.find("item")
@@ -396,10 +419,15 @@ class GismeteoApiClient:
         url = f"{ENDPOINT_URL}/forecast/?city={self.attributes[ATTR_ID]}&lang=en"
         cache_fname = f"forecast_{self.attributes[ATTR_ID]}"
 
-        response = await self._async_get_data(url, cache_fname)
+        response = await self._async_get_data(
+            url, cache_fname, FORECAST_MAX_CACHE_INTERVAL.total_seconds()
+        )
         try:
             xml = etree.fromstring(response)
             tzone = int(xml.find("location").get("tzone"))
+            self._attributes[ATTR_LAST_UPDATED] = self._get_utime(
+                xml.find("location").get("cur_time"), tzone
+            )
             current = xml.find("location/fact")
             current_v = current.find("values")
 

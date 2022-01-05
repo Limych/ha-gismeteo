@@ -78,25 +78,30 @@ def test__get():
 
 
 @patch("aiohttp.ClientSession.get")
-async def test__async_get_data(mock_get):
+async def test__async_get_data(mock_get, caplog):
     """Test with valid location data."""
     mock_get.return_value.__aenter__.return_value.status = HTTPStatus.OK
     mock_get.return_value.__aenter__.return_value.text = CoroutineMock(
         return_value="qwe"
     )
     #
+    caplog.clear()
     async with ClientSession() as client:
         gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
         city_id = await gismeteo._async_get_data("some_url")
 
     assert city_id == "qwe"
+    assert len(caplog.records) == 4
 
     mock_get.return_value.__aenter__.return_value.status = 404
     #
+    caplog.clear()
     async with ClientSession() as client:
         gismeteo = GismeteoApiClient(client, latitude=LATITUDE, longitude=LONGITUDE)
-        with raises(ApiError):
-            await gismeteo._async_get_data("some_url")
+        city_id = await gismeteo._async_get_data("some_url")
+
+    assert city_id is None
+    assert len(caplog.records) == 4
 
 
 async def test_async_get_location():
@@ -171,14 +176,14 @@ async def init_gismeteo(
                 },
             )
 
-            assert gismeteo.current == {}
+            assert not gismeteo.current
 
             if location_key is None or data is not False:
                 assert await gismeteo.async_update() is False
-                assert gismeteo.current == {}
+                assert not gismeteo.current
             else:
                 assert await gismeteo.async_update() is True
-                assert gismeteo.current != {}
+                assert gismeteo.current
 
     return gismeteo
 
