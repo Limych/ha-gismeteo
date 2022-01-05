@@ -32,7 +32,7 @@ from homeassistant.const import (
 # Base component constants
 NAME = "Gismeteo"
 DOMAIN = "gismeteo"
-VERSION = "2.3.5-alpha"
+VERSION = "2.3.5-beta"
 ATTRIBUTION = "Data provided by Gismeteo"
 ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
 
