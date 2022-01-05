@@ -14,7 +14,7 @@ import time
 import xml.etree.ElementTree as etree  # type: ignore
 from datetime import datetime
 from http import HTTPStatus
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from aiohttp import ClientSession
 from homeassistant.components.weather import (
@@ -133,7 +133,7 @@ class GismeteoApiClient:
         self._cache = Cache(params) if params.get("cache_dir") is not None else None
         self._latitude = latitude
         self._longitude = longitude
-        self._attributes = {
+        self._attributes: Dict[str, Any] = {
             ATTR_ID: location_key,
         }
 
@@ -425,8 +425,14 @@ class GismeteoApiClient:
         try:
             xml = etree.fromstring(response)
             tzone = int(xml.find("location").get("tzone"))
-            self._attributes[ATTR_LAST_UPDATED] = self._get_utime(
-                xml.find("location").get("cur_time"), tzone
+            self._attributes[ATTR_LAST_UPDATED] = (
+                dt_util.as_local(
+                    dt_util.utc_from_timestamp(
+                        self._get_utime(xml.find("location").get("cur_time"), tzone)
+                    )
+                )
+                .replace(microsecond=0)
+                .isoformat()
             )
             current = xml.find("location/fact")
             current_v = current.find("values")
