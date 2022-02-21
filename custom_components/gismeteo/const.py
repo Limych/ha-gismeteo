@@ -9,6 +9,7 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 from datetime import timedelta
+from typing import Final
 
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
@@ -30,13 +31,13 @@ from homeassistant.const import (
 )
 
 # Base component constants
-NAME = "Gismeteo"
-DOMAIN = "gismeteo"
-VERSION = "2.4.0-beta1"
-ATTRIBUTION = "Data provided by Gismeteo"
-ISSUE_URL = "https://github.com/Limych/ha-gismeteo/issues"
+NAME: Final = "Gismeteo"
+DOMAIN: Final = "gismeteo"
+VERSION: Final = "2.4.0-beta1"
+ATTRIBUTION: Final = "Data provided by Gismeteo"
+ISSUE_URL: Final = "https://github.com/Limych/ha-gismeteo/issues"
 
-STARTUP_MESSAGE = f"""
+STARTUP_MESSAGE: Final = f"""
 -------------------------------------------------------------------
 {NAME}
 Version: {VERSION}
@@ -47,54 +48,54 @@ If you have ANY issues with this you need to open an issue here:
 """
 
 # Platforms
-PLATFORMS = [SENSOR, WEATHER]
+PLATFORMS: Final = [SENSOR, WEATHER]
 
 # Configuration and options
-CONF_CACHE_DIR = "cache_dir"
-CONF_FORECAST = "forecast"
-CONF_PLATFORMS = "platforms"
-CONF_YAML = "_yaml"
+CONF_CACHE_DIR: Final = "cache_dir"
+CONF_FORECAST: Final = "forecast"
+CONF_PLATFORMS: Final = "platforms"
+CONF_YAML: Final = "_yaml"
 
-FORECAST_MODE_HOURLY = "hourly"
-FORECAST_MODE_DAILY = "daily"
+FORECAST_MODE_HOURLY: Final = "hourly"
+FORECAST_MODE_DAILY: Final = "daily"
 
 # Defaults
-DEFAULT_NAME = "Gismeteo"
+DEFAULT_NAME: Final = "Gismeteo"
 
 # Attributes
-ATTR_LAST_UPDATED = "last_updated"
+ATTR_LAST_UPDATED: Final = "last_updated"
 #
-ATTR_SUNRISE = "sunrise"
-ATTR_SUNSET = "sunset"
+ATTR_SUNRISE: Final = "sunrise"
+ATTR_SUNSET: Final = "sunset"
 #
-ATTR_WEATHER_CONDITION = ATTR_FORECAST_CONDITION
-ATTR_WEATHER_CLOUDINESS = "cloudiness"
-ATTR_WEATHER_PRECIPITATION_TYPE = "precipitation_type"
-ATTR_WEATHER_PRECIPITATION_AMOUNT = "precipitation_amount"
-ATTR_WEATHER_PRECIPITATION_INTENSITY = "precipitation_intensity"
-ATTR_WEATHER_STORM = "storm"
-ATTR_WEATHER_GEOMAGNETIC_FIELD = "gm_field"
-ATTR_WEATHER_PHENOMENON = "phenomenon"
-ATTR_WEATHER_WATER_TEMPERATURE = "water_temperature"
+ATTR_WEATHER_CONDITION: Final = ATTR_FORECAST_CONDITION
+ATTR_WEATHER_CLOUDINESS: Final = "cloudiness"
+ATTR_WEATHER_PRECIPITATION_TYPE: Final = "precipitation_type"
+ATTR_WEATHER_PRECIPITATION_AMOUNT: Final = "precipitation_amount"
+ATTR_WEATHER_PRECIPITATION_INTENSITY: Final = "precipitation_intensity"
+ATTR_WEATHER_STORM: Final = "storm"
+ATTR_WEATHER_GEOMAGNETIC_FIELD: Final = "gm_field"
+ATTR_WEATHER_PHENOMENON: Final = "phenomenon"
+ATTR_WEATHER_WATER_TEMPERATURE: Final = "water_temperature"
 #
-ATTR_FORECAST_HUMIDITY = "humidity"
-ATTR_FORECAST_PRESSURE = "pressure"
-ATTR_FORECAST_CLOUDINESS = ATTR_WEATHER_CLOUDINESS
-ATTR_FORECAST_PRECIPITATION_TYPE = ATTR_WEATHER_PRECIPITATION_TYPE
-ATTR_FORECAST_PRECIPITATION_AMOUNT = ATTR_WEATHER_PRECIPITATION_AMOUNT
-ATTR_FORECAST_PRECIPITATION_INTENSITY = ATTR_WEATHER_PRECIPITATION_INTENSITY
-ATTR_FORECAST_STORM = ATTR_WEATHER_STORM
-ATTR_FORECAST_GEOMAGNETIC_FIELD = ATTR_WEATHER_GEOMAGNETIC_FIELD
-ATTR_FORECAST_PHENOMENON = ATTR_WEATHER_PHENOMENON
+ATTR_FORECAST_HUMIDITY: Final = "humidity"
+ATTR_FORECAST_PRESSURE: Final = "pressure"
+ATTR_FORECAST_CLOUDINESS: Final = ATTR_WEATHER_CLOUDINESS
+ATTR_FORECAST_PRECIPITATION_TYPE: Final = ATTR_WEATHER_PRECIPITATION_TYPE
+ATTR_FORECAST_PRECIPITATION_AMOUNT: Final = ATTR_WEATHER_PRECIPITATION_AMOUNT
+ATTR_FORECAST_PRECIPITATION_INTENSITY: Final = ATTR_WEATHER_PRECIPITATION_INTENSITY
+ATTR_FORECAST_STORM: Final = ATTR_WEATHER_STORM
+ATTR_FORECAST_GEOMAGNETIC_FIELD: Final = ATTR_WEATHER_GEOMAGNETIC_FIELD
+ATTR_FORECAST_PHENOMENON: Final = ATTR_WEATHER_PHENOMENON
 
 
-ENDPOINT_URL = "https://services.gismeteo.ru/inform-service/inf_chrome"
+ENDPOINT_URL: Final = "https://services.gismeteo.ru/inform-service/inf_chrome"
 
-UPDATE_INTERVAL = timedelta(minutes=5)
-LOCATION_MAX_CACHE_INTERVAL = timedelta(days=7)
-FORECAST_MAX_CACHE_INTERVAL = timedelta(hours=3)
+UPDATE_INTERVAL: Final = timedelta(minutes=5)
+LOCATION_MAX_CACHE_INTERVAL: Final = timedelta(days=7)
+FORECAST_MAX_CACHE_INTERVAL: Final = timedelta(hours=3)
 
-CONDITION_FOG_CLASSES = [
+CONDITION_FOG_CLASSES: Final = [
     11,
     12,
     28,
@@ -118,14 +119,14 @@ CONDITION_FOG_CLASSES = [
     528,
 ]
 
-MMHG2HPA = 1.333223684
-MS2KMH = 3.6
+MMHG2HPA: Final = 1.333223684
+MS2KMH: Final = 3.6
 
-PRECIPITATION_AMOUNT = (0, 2, 6, 16)
+PRECIPITATION_AMOUNT: Final = (0, 2, 6, 16)
 
-DEVICE_CLASS_TPL = DOMAIN + "__{}"
+DEVICE_CLASS_TPL: Final = DOMAIN + "__{}"
 
-SENSOR_TYPES = {
+SENSOR_TYPES: Final = {
     "weather": {},  # => condition
     "condition": {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TPL.format("condition"),
@@ -212,12 +213,12 @@ SENSOR_TYPES = {
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
     },
 }
-FORECAST_SENSOR_TYPE = {
+FORECAST_SENSOR_TYPE: Final = {
     ATTR_DEVICE_CLASS: DEVICE_CLASS_TPL.format("condition"),
     ATTR_ICON: None,
     ATTR_NAME: "3h Forecast",
     ATTR_UNIT_OF_MEASUREMENT: None,
 }
 
-COORDINATOR = "coordinator"
-UNDO_UPDATE_LISTENER = "undo_update_listener"
+COORDINATOR: Final = "coordinator"
+UNDO_UPDATE_LISTENER: Final = "undo_update_listener"
