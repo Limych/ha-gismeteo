@@ -1,4 +1,4 @@
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 """
@@ -220,11 +220,12 @@ class GismeteoApiClient:
         try:
             xml = etree.fromstring(response)
             item = xml.find("item")
+            lon = self._get(item, "lng", float)
             self._attributes = {
                 ATTR_ID: self._get(item, "id", int),
                 ATTR_NAME: self._get(item, "n"),
                 ATTR_LATITUDE: self._get(item, "lat", float),
-                ATTR_LONGITUDE: self._get(item, "lng", float),
+                ATTR_LONGITUDE: (lon - 360) if lon > 180 else lon,
             }
         except (etree.ParseError, TypeError, AttributeError) as ex:
             raise ApiError(

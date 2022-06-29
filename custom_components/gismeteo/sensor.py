@@ -1,4 +1,4 @@
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 """
@@ -12,7 +12,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
@@ -171,7 +171,7 @@ async def async_setup_entry(
     async_add_entities(entities, False)
 
 
-class GismeteoSensor(GismeteoEntity):
+class GismeteoSensor(GismeteoEntity, SensorEntity):
     """Implementation of an Gismeteo sensor."""
 
     def __init__(
@@ -190,13 +190,15 @@ class GismeteoSensor(GismeteoEntity):
         self._attr_device_class = SENSOR_TYPES[kind][ATTR_DEVICE_CLASS]
         self._attr_icon = SENSOR_TYPES[kind][ATTR_ICON]
         self._attr_name = f"{self._location_name} {SENSOR_TYPES[kind][ATTR_NAME]}"
-        self._attr_unit_of_measurement = SENSOR_TYPES[kind][ATTR_UNIT_OF_MEASUREMENT]
+        self._attr_native_unit_of_measurement = SENSOR_TYPES[kind][
+            ATTR_UNIT_OF_MEASUREMENT
+        ]
 
         self._state = None
 
     @property
-    def state(self):
-        """Return the state."""
+    def native_value(self):
+        """Return the value reported by the sensor."""
         data = self._gismeteo.current
         try:
             if self._kind == "condition":

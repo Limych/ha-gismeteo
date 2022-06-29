@@ -1,4 +1,4 @@
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 
 # pylint: disable=redefined-outer-name,protected-access
 """Tests for Cache controller."""
@@ -31,7 +31,8 @@ def cache_dir(config):
         file_name = os.urandom(4).hex()
         content = os.urandom(7).hex()
         file_path = os.path.join(config["cache_dir"], file_name)
-        open(file_path, "w").write(content)
+        with open(file_path, "w", encoding="utf8") as fp:
+            fp.write(content)
 
         mtime = now - 60 - random.randint(0, 180)
         os.utime(file_path, (mtime, mtime))
@@ -41,7 +42,8 @@ def cache_dir(config):
         file_name = os.urandom(4).hex()
         content = os.urandom(7).hex()
         file_path = os.path.join(config["cache_dir"], file_name)
-        open(file_path, "w").write(content)
+        with open(file_path, "w", encoding="utf8") as fp:
+            fp.write(content)
 
         mtime = now - random.randint(0, 59)
         os.utime(file_path, (mtime, mtime))

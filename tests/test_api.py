@@ -1,6 +1,6 @@
 # pylint: disable=protected-access
 
-#  Copyright (c) 2019-2021, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
+#  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
@@ -17,7 +17,7 @@ from unittest.mock import patch
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
 from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
-from homeassistant.const import ATTR_ID, ATTR_NAME
+from homeassistant.const import ATTR_ID, ATTR_LATITUDE, ATTR_LONGITUDE, ATTR_NAME
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -120,6 +120,9 @@ async def test_async_get_location():
 
     assert gismeteo.attributes[ATTR_ID] == 167413
     assert gismeteo.attributes[ATTR_NAME] == "Razvilka"
+    assert gismeteo._valid_coordinates(
+        gismeteo.attributes[ATTR_LATITUDE], gismeteo.attributes[ATTR_LONGITUDE]
+    )
 
     with patch.object(
         GismeteoApiClient,
