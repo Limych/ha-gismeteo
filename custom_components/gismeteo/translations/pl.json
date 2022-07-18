@@ -14,8 +14,7 @@
                     "longitude": "Długość geograficzna",
                     "name": "Nazwa"
                 },
-                "description": "Jeśli potrzebujesz pomocy przy konfiguracji zajrzyj tutaj: https://github.com/Limych/ha-gismeteo",
-                "title": "Gismeteo"
+                "description": "Jeśli potrzebujesz pomocy przy konfiguracji zajrzyj tutaj: https://github.com/Limych/ha-gismeteo"
             }
         }
     },

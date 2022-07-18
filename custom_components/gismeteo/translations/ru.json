@@ -14,8 +14,7 @@
                     "longitude": "Долгота",
                     "name": "Название"
                 },
-                "description": "Ознакомьтесь с инструкциями, если Вам нужна помощь с настройкой:\nhttps://github.com/Limych/ha-gismeteo",
-                "title": "Gismeteo"
+                "description": "Ознакомьтесь с инструкциями, если Вам нужна помощь с настройкой:\nhttps://github.com/Limych/ha-gismeteo"
             }
         }
     },
