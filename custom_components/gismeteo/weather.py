@@ -22,6 +22,8 @@ from homeassistant.const import (
     CONF_MODE,
     CONF_NAME,
     CONF_PLATFORM,
+    PRESSURE_MMHG,
+    SPEED_KILOMETERS_PER_HOUR,
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant
@@ -131,19 +133,24 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
         return self._gismeteo.condition()
 
     @property
-    def temperature(self):
+    def native_temperature(self):
         """Return the current temperature."""
         return self._gismeteo.temperature()
 
     @property
-    def temperature_unit(self):
+    def native_temperature_unit(self):
         """Return the unit of measurement."""
         return TEMP_CELSIUS
 
     @property
-    def pressure(self):
+    def native_pressure(self):
         """Return the current pressure."""
-        return self._gismeteo.pressure_hpa()
+        return self._gismeteo.pressure_mmhg()
+
+    @property
+    def native_pressure_unit(self):
+        """Return the unit of measurement."""
+        return PRESSURE_MMHG
 
     @property
     def humidity(self):
@@ -156,9 +163,14 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
         return self._gismeteo.wind_bearing()
 
     @property
-    def wind_speed(self):
+    def native_wind_speed(self):
         """Return the current windspeed."""
         return self._gismeteo.wind_speed_kmh()
+
+    @property
+    def native_wind_speed_unit(self):
+        """Return the native unit of measurement for wind speed."""
+        return SPEED_KILOMETERS_PER_HOUR
 
     @property
     def forecast(self):
