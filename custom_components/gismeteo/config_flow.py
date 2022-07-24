@@ -23,6 +23,7 @@ from homeassistant.const import (
     CONF_MODE,
     CONF_NAME,
     CONF_PLATFORM,
+    CONF_SHOW_ON_MAP,
 )
 from homeassistant.core import callback
 
@@ -141,6 +142,10 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_FORECAST,
                     default=self.options.get(CONF_FORECAST, False),
+                ): bool,
+                vol.Required(
+                    CONF_SHOW_ON_MAP,
+                    default=self.options.get(CONF_SHOW_ON_MAP, False),
                 ): bool,
             }
         )

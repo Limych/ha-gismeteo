@@ -33,7 +33,7 @@ from homeassistant.const import (
 # Base component constants
 NAME: Final = "Gismeteo"
 DOMAIN: Final = "gismeteo"
-VERSION: Final = "2.4.2-alpha"
+VERSION: Final = "2.5.0-alpha"
 ATTRIBUTION: Final = "Data provided by Gismeteo"
 ISSUE_URL: Final = "https://github.com/Limych/ha-gismeteo/issues"
 
@@ -87,6 +87,9 @@ ATTR_FORECAST_PRECIPITATION_INTENSITY: Final = ATTR_WEATHER_PRECIPITATION_INTENS
 ATTR_FORECAST_STORM: Final = ATTR_WEATHER_STORM
 ATTR_FORECAST_GEOMAGNETIC_FIELD: Final = ATTR_WEATHER_GEOMAGNETIC_FIELD
 ATTR_FORECAST_PHENOMENON: Final = ATTR_WEATHER_PHENOMENON
+#
+ATTR_LAT = "lat"
+ATTR_LON = "lon"
 
 
 ENDPOINT_URL: Final = "https://services.gismeteo.ru/inform-service/inf_chrome"

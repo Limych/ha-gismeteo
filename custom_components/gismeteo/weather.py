@@ -9,13 +9,11 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
-from typing import Any, Dict, Optional
 
 import voluptuous as vol
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
-    ATTR_ATTRIBUTION,
     CONF_API_KEY,
     CONF_LATITUDE,
     CONF_LONGITUDE,
@@ -82,14 +80,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
     entities = []
     if config_entry.source == SOURCE_IMPORT:
         # Setup from configuration.yaml
-        for uid, cfg in hass.data[DOMAIN][CONF_YAML].items():
-            if cfg[CONF_PLATFORM] != WEATHER:
+        for uid, config in hass.data[DOMAIN][CONF_YAML].items():
+            if config[CONF_PLATFORM] != WEATHER:
                 continue  # pragma: no cover
 
-            name = cfg[CONF_NAME]
+            name = config[CONF_NAME]
             coordinator = hass.data[DOMAIN][uid][COORDINATOR]
 
-            entities.append(GismeteoWeather(name, coordinator))
+            entities.append(GismeteoWeather(name, coordinator, config))
 
     else:
         # Setup from config entry
@@ -99,7 +97,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
         name = config[CONF_NAME]
         coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
-        entities.append(GismeteoWeather(name, coordinator))
+        entities.append(GismeteoWeather(name, coordinator, config))
 
     async_add_entities(entities, False)
 
@@ -107,9 +105,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 class GismeteoWeather(GismeteoEntity, WeatherEntity):
     """Implementation of an Gismeteo sensor."""
 
-    def __init__(self, location_name: str, coordinator: GismeteoDataUpdateCoordinator):
+    def __init__(
+        self,
+        location_name: str,
+        coordinator: GismeteoDataUpdateCoordinator,
+        config: dict,
+    ):
         """Initialize."""
-        super().__init__(location_name, coordinator)
+        super().__init__(location_name, coordinator, config)
         self._attrs = {}
 
     @property
@@ -176,10 +179,3 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
     def forecast(self):
         """Return the forecast array."""
         return self._gismeteo.forecast()
-
-    @property
-    def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
-        """Return the state attributes."""
-        attrs = self._gismeteo.attributes.copy()
-        attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
-        return attrs

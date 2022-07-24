@@ -25,7 +25,8 @@
                     "platform_sensor": "Sensor entities enabled",
                     "platform_weather": "Weather entity enabled",
                     "mode": "Forecast Mode",
-                    "forecast": "Add 3h Forecast Sensor"
+                    "forecast": "Add 3h Forecast Sensor",
+                    "show_on_map": "Show monitored geography on the map"
                 },
                 "title": "Gismeteo Options"
             }

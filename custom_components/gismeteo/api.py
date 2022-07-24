@@ -44,13 +44,7 @@ from homeassistant.components.weather import (
     ATTR_WEATHER_WIND_BEARING,
     ATTR_WEATHER_WIND_SPEED,
 )
-from homeassistant.const import (
-    ATTR_ID,
-    ATTR_LATITUDE,
-    ATTR_LONGITUDE,
-    ATTR_NAME,
-    STATE_UNKNOWN,
-)
+from homeassistant.const import ATTR_ID, ATTR_NAME, STATE_UNKNOWN
 from homeassistant.util import dt as dt_util
 
 from .cache import Cache
@@ -169,6 +163,16 @@ class GismeteoApiClient:
         return self._current
 
     @property
+    def latitude(self):
+        """Return weather station latitude."""
+        return self._latitude
+
+    @property
+    def longitude(self):
+        """Return weather station longitude."""
+        return self._longitude
+
+    @property
     def attributes(self):
         """Return forecast attributes."""
         return self._attributes
@@ -224,9 +228,9 @@ class GismeteoApiClient:
             self._attributes = {
                 ATTR_ID: self._get(item, "id", int),
                 ATTR_NAME: self._get(item, "n"),
-                ATTR_LATITUDE: self._get(item, "lat", float),
-                ATTR_LONGITUDE: (lon - 360) if lon > 180 else lon,
             }
+            self._latitude = self._get(item, "lat", float)
+            self._longitude = (lon - 360) if lon > 180 else lon
         except (etree.ParseError, TypeError, AttributeError) as ex:
             raise ApiError(
                 "Can't retrieve location data! Invalid server response."

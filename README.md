@@ -193,6 +193,11 @@ I put a lot of work into making this repo and component available and updated to
 > **water_temperature**\
 >   The current temperature of water.
 
+**show_on_map:**\
+  _(boolean) (Optional)_\
+  Enables showing the location of the weather station on the map.\
+  _Default value: false_
+
 ## Track updates
 
 You can automatically track new versions of this component and update it by [HACS][hacs].

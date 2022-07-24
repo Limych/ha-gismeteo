@@ -25,7 +25,8 @@
                     "platform_sensor": "Entidades do sensor ativadas",
                     "platform_weather": "Entidade meteorológica ativada",
                     "mode": "Modo de previsão",
-                    "forecast": "Adicionar sensor de previsão de 3h"
+                    "forecast": "Adicionar sensor de previsão de 3h",
+                    "show_on_map": "Mostrar o monitoramento no mapa"
                 },
                 "title": "Opções do Gismeteo"
             }

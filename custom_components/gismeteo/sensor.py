@@ -9,14 +9,13 @@ https://github.com/Limych/ha-gismeteo/
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List
 
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.components.weather import ATTR_FORECAST_CONDITION
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
-    ATTR_ATTRIBUTION,
     ATTR_DEVICE_CLASS,
     ATTR_ICON,
     ATTR_NAME,
@@ -37,7 +36,6 @@ from .const import (
     ATTR_WEATHER_PRECIPITATION_INTENSITY,
     ATTR_WEATHER_PRECIPITATION_TYPE,
     ATTR_WEATHER_STORM,
-    ATTRIBUTION,
     CONF_CACHE_DIR,
     CONF_FORECAST,
     CONF_YAML,
@@ -117,13 +115,15 @@ def _gen_entities(
         config.get(CONF_MONITORED_CONDITIONS, SENSOR_TYPES.keys()),
         warn=warn,
     ):
-        entities.append(GismeteoSensor(location_name, k, coordinator))
+        entities.append(GismeteoSensor(location_name, k, coordinator, config))
         if k == "pressure":
-            entities.append(GismeteoSensor(location_name, "pressure_mmhg", coordinator))
+            entities.append(
+                GismeteoSensor(location_name, "pressure_mmhg", coordinator, config)
+            )
 
     if config.get(CONF_FORECAST, False):
         SENSOR_TYPES["forecast"] = FORECAST_SENSOR_TYPE
-        entities.append(GismeteoSensor(location_name, "forecast", coordinator))
+        entities.append(GismeteoSensor(location_name, "forecast", coordinator, config))
 
     return entities
 
@@ -179,9 +179,10 @@ class GismeteoSensor(GismeteoEntity, SensorEntity):
         location_name: str,
         kind: str,
         coordinator: GismeteoDataUpdateCoordinator,
+        config: dict,
     ):
         """Initialize the sensor."""
-        super().__init__(location_name, coordinator)
+        super().__init__(location_name, coordinator, config)
 
         self._kind = kind
 
@@ -255,10 +256,3 @@ class GismeteoSensor(GismeteoEntity, SensorEntity):
             _LOGGER.warning("Condition is currently not available: %s", self._kind)
 
         return self._state
-
-    @property
-    def extra_state_attributes(self) -> Optional[Dict[str, Any]]:
-        """Return the state attributes."""
-        attrs = self._gismeteo.attributes.copy()
-        attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
-        return attrs

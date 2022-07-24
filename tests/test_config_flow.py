@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant import config_entries, data_entry_flow
-from homeassistant.const import CONF_MODE, CONF_NAME, CONF_PLATFORM
+from homeassistant.const import CONF_MODE, CONF_NAME, CONF_PLATFORM, CONF_SHOW_ON_MAP
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -121,4 +121,5 @@ async def test_options_flow(hass: HomeAssistant):
         f"{CONF_PLATFORM}_{WEATHER}": True,
         CONF_MODE: FORECAST_MODE_DAILY,
         CONF_FORECAST: True,
+        CONF_SHOW_ON_MAP: False,
     }

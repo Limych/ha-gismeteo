@@ -2,33 +2,23 @@
 
 from asynctest import Mock
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.const import (
-    ATTR_ATTRIBUTION,
-    CONF_MONITORED_CONDITIONS,
-    CONF_NAME,
-    CONF_PLATFORM,
-)
+from homeassistant.const import CONF_MONITORED_CONDITIONS, CONF_NAME, CONF_PLATFORM
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import assert_setup_component
 
 from custom_components.gismeteo import GismeteoDataUpdateCoordinator
-from custom_components.gismeteo.const import (
-    ATTRIBUTION,
-    CONF_FORECAST,
-    DOMAIN,
-    SENSOR_TYPES,
-)
+from custom_components.gismeteo.const import CONF_FORECAST, DOMAIN, SENSOR_TYPES
 from custom_components.gismeteo.sensor import GismeteoSensor, fix_kinds
 
-from tests.const import MOCK_UNIQUE_ID
+from tests.const import MOCK_CONFIG, MOCK_UNIQUE_ID
 
 
 async def test_fix_kinds(caplog):
     """Test fix_kinds function."""
     caplog.clear()
     res = fix_kinds([])
-    assert res == []
+    assert not res
     assert len(caplog.records) == 0
 
     caplog.clear()
@@ -56,14 +46,9 @@ async def test_sensor_initialization(hass: HomeAssistant):
     """Test sensor initialization."""
     mock_api = Mock()
     mock_api.condition = Mock(return_value="asd")
-    mock_api.attributes = {}
 
     coordinator = GismeteoDataUpdateCoordinator(hass, MOCK_UNIQUE_ID, mock_api)
-    sensor = GismeteoSensor("Test", "condition", coordinator)
-
-    expected_attributes = {
-        ATTR_ATTRIBUTION: ATTRIBUTION,
-    }
+    sensor = GismeteoSensor("Test", "condition", coordinator, MOCK_CONFIG)
 
     assert sensor.name == "Test Condition"
     assert sensor.unique_id == f"{MOCK_UNIQUE_ID}-condition"
@@ -72,7 +57,6 @@ async def test_sensor_initialization(hass: HomeAssistant):
     assert sensor.state == "asd"
     assert sensor.unit_of_measurement is None
     assert sensor.icon is None
-    assert sensor.extra_state_attributes == expected_attributes
 
 
 async def test_async_setup_platform(hass: HomeAssistant, gismeteo_api):
