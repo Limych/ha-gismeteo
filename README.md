@@ -95,12 +95,17 @@ I put a lot of work into making this repo and component available and updated to
 **latitude:**\
   _(float) (Optional)_\
   Latitude of the location to display the weather.\
-  _Default value: The latitude in your `configuration.yaml` file._
+  _Default value: Your home location latitude._
 
 **longitude:**\
   _(float) (Optional)_\
   Longitude of the location to display the weather.\
-  _Default value: The longitude in your `configuration.yaml` file._
+  _Default value: Your home location longitude._
+
+**show_on_map:**\
+  _(boolean) (Optional)_\
+  Enables showing the location of the weather station on the map.\
+  _Default value: false_
 
 ### Weather Sensors Configuration
 
