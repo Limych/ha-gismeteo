@@ -1,8 +1,7 @@
 #  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-"""
-The Gismeteo component.
+"""The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
@@ -11,10 +10,10 @@ https://github.com/Limych/ha-gismeteo/
 import asyncio
 import logging
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
 from async_timeout import timeout
+import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
@@ -26,6 +25,7 @@ from homeassistant.const import (
     CONF_SHOW_ON_MAP,
 )
 from homeassistant.core import callback
+import homeassistant.helpers.config_validation as cv
 
 from . import DOMAIN, get_gismeteo  # pylint: disable=unused-import
 from .api import ApiError

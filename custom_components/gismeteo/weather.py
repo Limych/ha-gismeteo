@@ -1,8 +1,7 @@
 #  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-"""
-The Gismeteo component.
+"""The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
@@ -11,6 +10,7 @@ https://github.com/Limych/ha-gismeteo/
 import logging
 
 import voluptuous as vol
+
 from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (

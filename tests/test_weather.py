@@ -1,14 +1,14 @@
 """Tests for GisMeteo integration."""
 from asynctest import Mock
-from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
-from homeassistant.const import CONF_NAME, CONF_PLATFORM
-from homeassistant.core import HomeAssistant
-from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import assert_setup_component
 
 from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import DOMAIN
 from custom_components.gismeteo.weather import GismeteoWeather
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
+from homeassistant.const import CONF_NAME, CONF_PLATFORM
+from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
 
 from tests.const import MOCK_CONFIG, MOCK_UNIQUE_ID
 

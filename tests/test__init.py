@@ -4,15 +4,15 @@
 from unittest.mock import patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture
+
+from custom_components.gismeteo.api import ApiError, GismeteoApiClient
+from custom_components.gismeteo.const import CONF_FORECAST, DOMAIN
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture
-
-from custom_components.gismeteo.api import ApiError, GismeteoApiClient
-from custom_components.gismeteo.const import CONF_FORECAST, DOMAIN
 
 from .const import MOCK_CONFIG
 

@@ -1,14 +1,6 @@
 """Tests for GisMeteo integration."""
 
 from asynctest import Mock
-from homeassistant.const import (
-    ATTR_ATTRIBUTION,
-    ATTR_ID,
-    ATTR_LATITUDE,
-    ATTR_LONGITUDE,
-    CONF_SHOW_ON_MAP,
-)
-from homeassistant.core import HomeAssistant
 
 from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import (
@@ -19,6 +11,14 @@ from custom_components.gismeteo.const import (
     NAME,
 )
 from custom_components.gismeteo.entity import GismeteoEntity
+from homeassistant.const import (
+    ATTR_ATTRIBUTION,
+    ATTR_ID,
+    ATTR_LATITUDE,
+    ATTR_LONGITUDE,
+    CONF_SHOW_ON_MAP,
+)
+from homeassistant.core import HomeAssistant
 
 from tests.const import (
     MOCK_API_ID,

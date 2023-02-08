@@ -1,8 +1,7 @@
 #  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-"""
-The Gismeteo component.
+"""The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
@@ -14,6 +13,7 @@ from typing import Optional
 
 from aiohttp import ClientConnectorError
 from async_timeout import timeout
+
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry

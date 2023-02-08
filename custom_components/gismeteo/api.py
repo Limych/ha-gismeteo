@@ -1,22 +1,23 @@
 #  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-"""
-The Gismeteo component.
+"""The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 
+from collections.abc import Callable
+from datetime import datetime
+from http import HTTPStatus
 import logging
 import math
 import time
+from typing import Any, Dict, Optional
 import xml.etree.ElementTree as etree  # type: ignore
-from datetime import datetime
-from http import HTTPStatus
-from typing import Any, Callable, Dict, Optional
 
 from aiohttp import ClientSession
+
 from homeassistant.components.weather import (
     ATTR_CONDITION_CLEAR_NIGHT,
     ATTR_CONDITION_CLOUDY,

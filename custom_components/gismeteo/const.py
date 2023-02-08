@@ -1,8 +1,7 @@
 #  Copyright (c) 2019-2022, Andrey "Limych" Khrolenok <andrey@khrolenok.ru>
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
-"""
-The Gismeteo component.
+"""The Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
@@ -12,8 +11,7 @@ from datetime import timedelta
 from typing import Final
 
 from homeassistant.components.sensor import DOMAIN as SENSOR
-from homeassistant.components.weather import ATTR_FORECAST_CONDITION
-from homeassistant.components.weather import DOMAIN as WEATHER
+from homeassistant.components.weather import ATTR_FORECAST_CONDITION, DOMAIN as WEATHER
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ICON,

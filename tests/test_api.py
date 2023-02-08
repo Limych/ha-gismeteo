@@ -4,8 +4,7 @@
 #  Creative Commons BY-NC-SA 4.0 International Public License
 #  (see LICENSE.md or https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-"""
-Tests for the Gismeteo component.
+"""Tests for the Gismeteo component.
 
 For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
@@ -16,8 +15,6 @@ from unittest.mock import patch
 
 from aiohttp import ClientSession
 from asynctest import CoroutineMock
-from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
-from homeassistant.const import ATTR_ID, ATTR_NAME
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -36,6 +33,8 @@ from custom_components.gismeteo.const import (
     FORECAST_MODE_DAILY,
     FORECAST_MODE_HOURLY,
 )
+from homeassistant.components.weather import ATTR_WEATHER_WIND_SPEED
+from homeassistant.const import ATTR_ID, ATTR_NAME
 
 LATITUDE = 52.0677904
 LONGITUDE = 19.4795644
@@ -145,10 +144,12 @@ async def test_async_get_location():
 
 def test__get_utime():
     """Test _get_utime service method."""
-    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 180) == 1613912400
-    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 0) == 1613923200
-    assert GismeteoApiClient._get_utime("2021-02-21", 180) == 1613854800
     assert GismeteoApiClient._get_utime("2021-02-21", 0) == 1613865600
+    assert GismeteoApiClient._get_utime("2021-02-21", 180) == 1613854800
+
+    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 0) == 1613923200
+    assert GismeteoApiClient._get_utime("2021-02-21T16:00:00", 180) == 1613912400
+    assert GismeteoApiClient._get_utime("2021-02-21T13:00:00", 0) == 1613912400
 
     with raises(ValueError):
         GismeteoApiClient._get_utime("2021-02-", 0)
