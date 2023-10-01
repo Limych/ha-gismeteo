@@ -11,6 +11,9 @@
     "documentation": "https://github.com/Limych/ha-gismeteo",
     "iot_class": "cloud_polling",
     "issue_tracker": "https://github.com/Limych/ha-gismeteo/issues",
-    "requirements": [],
-    "version": "2.5.2-alpha"
+    "requirements": [
+        "colorlog==6.7.0",
+        "ruff==0.0.291"
+    ],
+    "version": "2.5.2"
 }
