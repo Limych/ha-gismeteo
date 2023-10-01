@@ -1,6 +1,5 @@
 """Tests for GisMeteo integration."""
-
-from asynctest import Mock
+from unittest.mock import Mock
 
 from custom_components.gismeteo import GismeteoDataUpdateCoordinator
 from custom_components.gismeteo.const import (

@@ -1,5 +1,6 @@
 """Tests for GisMeteo integration."""
-from asynctest import Mock
+from unittest.mock import Mock
+
 from pytest_homeassistant_custom_component.common import assert_setup_component
 
 from custom_components.gismeteo import GismeteoDataUpdateCoordinator

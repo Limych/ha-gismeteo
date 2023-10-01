@@ -11,10 +11,9 @@ https://github.com/Limych/ha-gismeteo/
 """
 from http import HTTPStatus
 from typing import Any, Optional
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from aiohttp import ClientSession
-from asynctest import CoroutineMock
 from pytest import raises
 from pytest_homeassistant_custom_component.common import load_fixture
 
@@ -79,10 +78,12 @@ def test__get():
 @patch("aiohttp.ClientSession.get")
 async def test__async_get_data(mock_get, caplog):
     """Test with valid location data."""
+
+    async def mock_coroutine():
+        return "qwe"
+
     mock_get.return_value.__aenter__.return_value.status = HTTPStatus.OK
-    mock_get.return_value.__aenter__.return_value.text = CoroutineMock(
-        return_value="qwe"
-    )
+    mock_get.return_value.__aenter__.return_value.text = Mock(wraps=mock_coroutine)
     #
     caplog.clear()
     async with ClientSession() as client:
