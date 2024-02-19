@@ -205,7 +205,7 @@ class GismeteoSensor(GismeteoEntity, SensorEntity):
             if self._kind == "condition":
                 self._state = self._gismeteo.condition()
             elif self._kind == "forecast":
-                self._state = self._gismeteo.forecast()[0][ATTR_FORECAST_CONDITION]
+                self._state = self._gismeteo.forecast(True)[0][ATTR_FORECAST_CONDITION]
             elif self._kind == "temperature":
                 self._state = self._gismeteo.temperature()
             elif self._kind == "temperature_feels_like":
