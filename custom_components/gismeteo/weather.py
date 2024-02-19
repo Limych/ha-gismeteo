@@ -11,7 +11,12 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components.weather import PLATFORM_SCHEMA, WeatherEntity
+from homeassistant.components.weather import (
+    PLATFORM_SCHEMA,
+    Forecast,
+    WeatherEntity,
+    WeatherEntityFeature,
+)
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_API_KEY,
@@ -20,9 +25,10 @@ from homeassistant.const import (
     CONF_MODE,
     CONF_NAME,
     CONF_PLATFORM,
-    PRESSURE_MMHG,
-    SPEED_KILOMETERS_PER_HOUR,
-    TEMP_CELSIUS,
+    UnitOfPrecipitationDepth,
+    UnitOfPressure,
+    UnitOfSpeed,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -104,6 +110,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, async_add_entitie
 
 class GismeteoWeather(GismeteoEntity, WeatherEntity):
     """Implementation of an Gismeteo sensor."""
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_precipitation_unit = UnitOfPrecipitationDepth.MILLIMETERS
+    _attr_native_pressure_unit = UnitOfPressure.MMHG
+    _attr_native_wind_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
+    _attr_supported_features = ( WeatherEntityFeature.FORECAST_DAILY | WeatherEntityFeature.FORECAST_HOURLY )
 
     def __init__(
         self,
@@ -141,19 +152,10 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
         return self._gismeteo.temperature()
 
     @property
-    def native_temperature_unit(self):
-        """Return the unit of measurement."""
-        return TEMP_CELSIUS
-
-    @property
     def native_pressure(self):
         """Return the current pressure."""
         return self._gismeteo.pressure_mmhg()
 
-    @property
-    def native_pressure_unit(self):
-        """Return the unit of measurement."""
-        return PRESSURE_MMHG
 
     @property
     def humidity(self):
@@ -170,12 +172,10 @@ class GismeteoWeather(GismeteoEntity, WeatherEntity):
         """Return the current windspeed."""
         return self._gismeteo.wind_speed_kmh()
 
-    @property
-    def native_wind_speed_unit(self):
-        """Return the native unit of measurement for wind speed."""
-        return SPEED_KILOMETERS_PER_HOUR
+    async def async_forecast_daily(self) -> list[Forecast] | None:
+        """Return the daily forecast in native units."""
+        return self._gismeteo.forecast(False)
 
-    @property
-    def forecast(self):
-        """Return the forecast array."""
-        return self._gismeteo.forecast()
+    async def async_forecast_hourly(self) -> list[Forecast] | None:
+        """Return the hourly forecast in native units."""
+        return self._gismeteo.forecast(True)
