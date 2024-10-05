@@ -207,7 +207,7 @@ class GismeteoApiClient:
             cache_fname += ".xml"
             if self._cache.is_cached(cache_fname):
                 _LOGGER.debug("Cached response used")
-                return self._cache.read_cache(cache_fname)
+                return await self._cache.read_cache(cache_fname)
 
         headers = {}
         if as_browser:
@@ -220,7 +220,7 @@ class GismeteoApiClient:
             data = await resp.text()
 
         if self._cache and cache_fname is not None and data:
-            self._cache.save_cache(cache_fname, data)
+            await self._cache.save_cache(cache_fname, data)
 
         return data
 

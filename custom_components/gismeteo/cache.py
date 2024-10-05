@@ -7,6 +7,7 @@
 import logging
 import os
 import time
+import aiofiles
 from typing import Any, Dict, Optional
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,17 +74,17 @@ class Cache:
         cache_time = max(cache_time, self._cache_time)
         return (file_time + cache_time) > time.time()
 
-    def read_cache(self, file_name: str, cache_time: int = 0) -> Optional[Any]:
+    async def read_cache(self, file_name: str, cache_time: int = 0) -> Optional[Any]:
         """Read cached data."""
         file_path = self._get_file_path(file_name)
         _LOGGER.debug("Read cache file %s", file_path)
         if not self.is_cached(file_name, cache_time):
             return None
 
-        with open(file_path, encoding="utf-8") as fp:
-            return fp.read()
+        async with aiofiles.open(file_path, encoding="utf-8") as fp:
+            return await fp.read()
 
-    def save_cache(self, file_name: str, content: Any) -> None:
+    async def save_cache(self, file_name: str, content: Any) -> None:
         """Save data to cache."""
         if self._cache_dir:
             if not os.path.exists(self._cache_dir):
@@ -92,5 +93,5 @@ class Cache:
             file_path = self._get_file_path(file_name)
             _LOGGER.debug("Store cache file %s", file_path)
 
-            with open(file_path, "w", encoding="utf-8") as fp:
-                fp.write(content)
+            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
+                await fp.write(content)
