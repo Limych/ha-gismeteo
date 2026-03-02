@@ -18,7 +18,7 @@ from .const import DOMAIN, NAME
 class GismeteoEntity(CoordinatorEntity):
     """Gismeteo entity."""
 
-    def __init__(self, coordinator: GismeteoDataUpdateCoordinator, location_name: str):
+    def __init__(self, coordinator: GismeteoDataUpdateCoordinator, location_name: str) -> None:
         """Class initialization."""
         super().__init__(coordinator)
         self._location_name = location_name
