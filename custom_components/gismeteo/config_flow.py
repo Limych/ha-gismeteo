@@ -8,6 +8,7 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 
+import asyncio
 import logging
 from collections.abc import Mapping
 from typing import Any
@@ -15,7 +16,6 @@ from typing import Any
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
-from async_timeout import timeout
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -75,7 +75,7 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                async with timeout(10):
+                async with asyncio.timeout(10):
                     gismeteo = _get_api_client(self.hass, user_input)
                     await gismeteo.async_update()
             except (TimeoutError, ApiError, ClientConnectorError, ClientError):
@@ -115,16 +115,11 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> config_entries.OptionsFlow:
         """Get component options flow."""
-        return GismeteoOptionsFlowHandler(config_entry)
+        return GismeteoOptionsFlowHandler()
 
 
 class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
     """Gismeteo config flow options handler."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize HACS options flow."""
-        self.config_entry = config_entry
-        self.options = dict(config_entry.options)
 
     async def async_step_init(
         self, user_input: ConfigType = None  # noqa: ARG002
@@ -140,10 +135,11 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> config_entries.ConfigFlowResult:
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            if CONF_FORECAST_DAYS in self.options:
-                self.options[CONF_FORECAST_DAYS] = None
-            self.options.update(user_input)
-            return await self._update_options()
+            options = dict(self.config_entry.options)
+            if CONF_FORECAST_DAYS in options:
+                options[CONF_FORECAST_DAYS] = None
+            options.update(user_input)
+            return self.async_create_entry(data=options)
 
         return self.async_show_form(
             step_id="user",
@@ -152,7 +148,7 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
                     {
                         vol.Required(
                             CONF_SHOW_ON_MAP,
-                            default=self.options.get(CONF_SHOW_ON_MAP, False),
+                            default=self.config_entry.options.get(CONF_SHOW_ON_MAP, False),
                         ): bool,
                         vol.Required(CONF_ADD_SENSORS, default=False): bool,
                         vol.Optional(CONF_FORECAST_DAYS): forecast_days_int,
@@ -160,10 +156,4 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
                 self.config_entry.options,
             ),
-        )
-
-    async def _update_options(self) -> config_entries.ConfigFlowResult:
-        """Update config entry options."""
-        return self.async_create_entry(
-            title=self.config_entry.data.get(CONF_NAME), data=self.options
         )

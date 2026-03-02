@@ -113,7 +113,7 @@ class GismeteoSensor(GismeteoEntity, SensorEntity):
         description: SensorEntityDescription,
         location_name: str,
         day: int | None = None,
-    ):
+    ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, location_name)
 
