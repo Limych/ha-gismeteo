@@ -8,6 +8,7 @@ For more details about this platform, please refer to the documentation at
 https://github.com/Limych/ha-gismeteo/
 """
 
+import asyncio
 import logging
 from collections.abc import Mapping
 from typing import Any
@@ -15,7 +16,6 @@ from typing import Any
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import ClientConnectorError, ClientError
-from async_timeout import timeout
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -75,7 +75,7 @@ class GismeteoFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                async with timeout(10):
+                async with asyncio.timeout(10):
                     gismeteo = _get_api_client(self.hass, user_input)
                     await gismeteo.async_update()
             except (TimeoutError, ApiError, ClientConnectorError, ClientError):
