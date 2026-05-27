@@ -123,7 +123,7 @@ class GismeteoOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize HACS options flow."""
-        self.config_entry = config_entry
+        #self.config_entry = config_entry # must be disabled from HA 2025.12
         self.options = dict(config_entry.options)
 
     async def async_step_init(

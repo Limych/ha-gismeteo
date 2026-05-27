@@ -99,7 +99,7 @@ UNDO_UPDATE_LISTENER: Final = "undo_update_listener"
 
 ENDPOINT_URL: Final = "https://services.gismeteo.ru/inform-service/inf_chrome"
 #
-PARSER_URL_FORMAT: Final = "https://www.gismeteo.ru/weather-{}/10-days/"
+PARSER_URL_FORMAT: Final = "https://meteofor.com/weather-{}/10-days/"
 PARSER_USER_AGENT: Final = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
     " Chrome/128.0.0.0 Safari/537.36"
